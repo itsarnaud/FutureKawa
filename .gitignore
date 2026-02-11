@@ -1,5 +1,9 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
+# 
+.env
+.github
+.vscode
 # compiled output
 dist
 tmp
@@ -15,7 +19,7 @@ node_modules
 .c9/
 *.launch
 .settings/
-*.sublime-workspace
+*.sublime-workspaceS
 
 # IDE - VSCode
 .vscode/*
