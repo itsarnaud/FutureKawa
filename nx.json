@@ -37,7 +37,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/gateway-e2e/**/*"]
+      "exclude": ["apps/gateway-e2e/**/*", "apps/country-api-e2e/**/*"]
     },
     {
       "plugin": "@nx/next/plugin",
