@@ -1,4 +1,40 @@
+version: '3.8'
+
+x-mosquitto-template: &mosquitto-base
+  image: eclipse-mosquitto:latest
+  restart: unless-stopped
+  networks:
+    - futurekawa-network
+
 services:
+
+  mosquitto-bresil:
+    <<: *mosquitto-base
+    container_name: mosquitto-bresil
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./IOT/broker/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./IOT/broker/data/bresil:/mosquitto/data
+
+  mosquitto-equateur:
+    <<: *mosquitto-base
+    container_name: mosquitto-equateur
+    ports:
+      - "1884:1883"
+    volumes:
+      - ./IOT/broker/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./IOT/broker/data/equateur:/mosquitto/data
+
+  mosquitto-colombie:
+    <<: *mosquitto-base
+    container_name: mosquitto-colombie
+    ports:
+      - "1885:1883"
+    volumes:
+      - ./IOT/broker/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./IOT/broker/data/colombie:/mosquitto/data
+
   postgres:
     image: postgres:17-alpine
     env_file:
@@ -11,6 +47,9 @@ services:
       - '${POSTGRES_PORT}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - futurekawa-network
+
   redis:
     image: redis:7-alpine
     env_file:
@@ -20,6 +59,13 @@ services:
     command: ['redis-server', '--requirepass', '${REDIS_PASSWORD}']
     volumes:
       - redis_data:/data
+    networks:
+      - futurekawa-network
+
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  futurekawa-network:
+    driver: bridge
