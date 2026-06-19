@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../../EPSI/M1/MSPR2/IOT"
+		},
+		{
+			"name": "futurekawa-iot-esp32",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
