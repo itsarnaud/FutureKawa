@@ -1,5 +1,3 @@
-version: '3.8'
-
 x-mosquitto-template: &mosquitto-base
   image: eclipse-mosquitto:latest
   restart: unless-stopped
