@@ -1,0 +1,169 @@
+// FutureKawa — Prisma Schema
+// Multi-country coffee traceability & IoT monitoring system
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum LotStatus {
+  conforme
+  alerte
+  perime
+}
+
+enum QualityGrade {
+  specialty    // SCA score > 80
+  premium      // SCA score 75–80
+  standard     // SCA score < 75
+  non_conforme // rejeté au tri
+}
+
+enum AlertType {
+  temperature_haute
+  temperature_basse
+  humidite_haute
+  humidite_basse
+  lot_perime
+}
+
+enum DeviceStatus {
+  actif
+  inactif
+  maintenance
+}
+
+// ─────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────
+
+model Country {
+  id   String @id @default(uuid())
+  code String @unique // "BR" | "EC" | "CO"
+  name String
+
+  // IoT thresholds
+  tempIdeal         Float
+  tempTolerance     Float @default(3.0)
+  humidityIdeal     Float
+  humidityTolerance Float @default(2.0)
+
+  // Relations
+  warehouses    Warehouse[]
+  exploitations Exploitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("countries")
+}
+
+model Warehouse {
+  id           String  @id @default(uuid())
+  countryId    String
+  name         String
+  address      String?
+  managerEmail String
+
+  // Relations
+  country Country     @relation(fields: [countryId], references: [id])
+  lots    Lot[]
+  devices IotDevice[]
+  alerts  Alert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("warehouses")
+}
+
+model Exploitation {
+  id        String  @id @default(uuid())
+  countryId String
+  name      String
+  location  String?
+
+  // Relations
+  country Country @relation(fields: [countryId], references: [id])
+  lots    Lot[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("exploitations")
+}
+
+model Lot {
+  id             String       @id @default(uuid())
+  warehouseId    String
+  exploitationId String
+  storedAt       DateTime     @default(now())
+  status         LotStatus    @default(conforme)
+  qualityGrade   QualityGrade @default(standard)
+  weightKg       Float
+
+  // Relations
+  warehouse    Warehouse    @relation(fields: [warehouseId], references: [id])
+  exploitation Exploitation @relation(fields: [exploitationId], references: [id])
+  alerts       Alert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("lots")
+}
+
+model IotDevice {
+  id              String       @id @default(uuid())
+  warehouseId     String
+  mqttTopic       String       @unique
+  firmwareVersion String?
+  status          DeviceStatus @default(actif)
+
+  // Relations
+  warehouse      Warehouse       @relation(fields: [warehouseId], references: [id])
+  sensorReadings SensorReading[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("iot_devices")
+}
+
+model SensorReading {
+  id          String   @id @default(uuid())
+  deviceId    String
+  temperature Float
+  humidity    Float
+  recordedAt  DateTime @default(now())
+
+  // Relations
+  device IotDevice @relation(fields: [deviceId], references: [id])
+
+  @@index([deviceId, recordedAt])
+  @@map("sensor_readings")
+}
+
+model Alert {
+  id          String    @id @default(uuid())
+  warehouseId String
+  lotId       String?
+  type        AlertType
+  message     String
+  sent        Boolean   @default(false)
+  triggeredAt DateTime  @default(now())
+
+  // Relations
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  lot       Lot?      @relation(fields: [lotId], references: [id])
+
+  @@index([warehouseId, sent])
+  @@map("alerts")
+}
