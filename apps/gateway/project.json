@@ -62,8 +62,10 @@
       }
     },
     "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/gateway"],
       "options": {
-        "passWithNoTests": true
+        "jestConfig": "apps/gateway/jest.config.cts"
       }
     }
   }
