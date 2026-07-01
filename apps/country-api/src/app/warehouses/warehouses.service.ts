@@ -21,11 +21,14 @@ export class WarehousesService {
     return warehouse;
   }
 
-  async findReadings(id: string, limit = 100) {
+  async findReadings(id: string, limit = 100, since?: Date) {
     await this.findOne(id);
 
     return this.prisma.sensorReading.findMany({
-      where: { device: { warehouseId: id } },
+      where: {
+        device: { warehouseId: id },
+        ...(since && { recordedAt: { gte: since } }),
+      },
       orderBy: { recordedAt: 'desc' },
       take: limit,
       include: { device: { select: { id: true, mqttTopic: true } } },

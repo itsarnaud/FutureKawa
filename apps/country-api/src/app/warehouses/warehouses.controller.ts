@@ -19,7 +19,8 @@ export class WarehousesController {
   findReadings(
     @Param('id') id: string,
     @Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number,
+    @Query('since') since?: string,
   ) {
-    return this.warehousesService.findReadings(id, limit);
+    return this.warehousesService.findReadings(id, limit, since ? new Date(since) : undefined);
   }
 }

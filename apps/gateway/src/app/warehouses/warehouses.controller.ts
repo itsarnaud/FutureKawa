@@ -19,7 +19,10 @@ export class WarehousesController {
   findReadings(
     @Param('id') id: string,
     @Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number,
+    @Query('since') since?: string,
   ) {
-    return this.countryApi.get(`warehouses/${id}/readings?limit=${limit}`);
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (since) params.set('since', since);
+    return this.countryApi.get(`warehouses/${id}/readings?${params.toString()}`);
   }
 }
