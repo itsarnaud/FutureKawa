@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { MqttModule } from './mqtt/mqtt.module';
 import { LotsModule } from './lots/lots.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { WarehousesModule } from './warehouses/warehouses.module';
 import { PrismaModule } from '@fe/db';
 
 @Module({
@@ -16,6 +17,7 @@ import { PrismaModule } from '@fe/db';
     AlertsModule,
     MqttModule,
     LotsModule,
+    WarehousesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
