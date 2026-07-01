@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@fe/db';
+import { AlertsService } from '../alerts/alerts.service';
 import { MeasureDto } from './dto/measure.dto';
 
 interface WarehouseMeasure extends MeasureDto {
@@ -11,7 +12,10 @@ interface WarehouseMeasure extends MeasureDto {
 export class MeasuresService {
   private readonly logger = new Logger(MeasuresService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly alertsService: AlertsService,
+  ) {}
 
   async record(measure: WarehouseMeasure): Promise<void> {
     const topic = `${measure.country}/${measure.warehouse}/mesures`;
@@ -33,6 +37,8 @@ export class MeasuresService {
         recordedAt: new Date(),
       },
     });
+
+    await this.alertsService.checkThresholds(device.warehouseId, measure.temperature, measure.humidite);
 
     this.logger.log(
       `Recorded reading for device ${device.id} — temp: ${measure.temperature}°C, humidity: ${measure.humidite}%`,

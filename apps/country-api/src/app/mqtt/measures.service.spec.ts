@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { MeasuresService } from './measures.service';
+import { AlertsService } from '../alerts/alerts.service';
 import { PrismaService } from '@fe/db';
 
 const mockDevice = {
@@ -15,6 +16,8 @@ const mockPrisma = {
   sensorReading: { create: jest.fn() },
 };
 
+const mockAlertsService = { checkThresholds: jest.fn() };
+
 describe('MeasuresService', () => {
   let service: MeasuresService;
 
@@ -23,6 +26,7 @@ describe('MeasuresService', () => {
       providers: [
         MeasuresService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: AlertsService, useValue: mockAlertsService },
       ],
     }).compile();
 
