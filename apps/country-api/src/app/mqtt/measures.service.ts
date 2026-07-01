@@ -30,7 +30,7 @@ export class MeasuresService {
         deviceId: device.id,
         temperature: measure.temperature,
         humidity: measure.humidite,
-        recordedAt: new Date(measure.timestamp),
+        recordedAt: new Date(),
       },
     });
 

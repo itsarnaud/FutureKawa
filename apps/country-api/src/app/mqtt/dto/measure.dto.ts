@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 
 export class MeasureDto {
   @IsNumber()
@@ -7,6 +7,6 @@ export class MeasureDto {
   @IsNumber()
   humidite: number;
 
-  @IsDateString()
+  @IsString()
   timestamp: string;
 }

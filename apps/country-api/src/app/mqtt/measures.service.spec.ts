@@ -6,7 +6,7 @@ import { PrismaService } from '@fe/db';
 const mockDevice = {
   id: 'device-1',
   warehouseId: 'wh-1',
-  mqttTopic: 'BR/warehouse-1/mesures',
+  mqttTopic: 'bresil/entrepot1/mesures',
   status: 'actif',
 };
 
@@ -32,30 +32,29 @@ describe('MeasuresService', () => {
 
   describe('record', () => {
     const measure = {
-      country: 'BR',
-      warehouse: 'warehouse-1',
+      country: 'bresil',
+      warehouse: 'entrepot1',
       temperature: 29,
       humidite: 55,
-      timestamp: '2026-07-01T10:00:00Z',
+      timestamp: '123456',
     };
 
-    it('persiste la mesure quand le device existe', async () => {
+    it('persiste la mesure avec recordedAt = now quand le device existe', async () => {
       mockPrisma.iotDevice.findUnique.mockResolvedValue(mockDevice);
       mockPrisma.sensorReading.create.mockResolvedValue({});
 
+      const before = new Date();
       await service.record(measure);
+      const after = new Date();
 
       expect(mockPrisma.iotDevice.findUnique).toHaveBeenCalledWith({
-        where: { mqttTopic: 'BR/warehouse-1/mesures' },
+        where: { mqttTopic: 'bresil/entrepot1/mesures' },
       });
-      expect(mockPrisma.sensorReading.create).toHaveBeenCalledWith({
-        data: {
-          deviceId: 'device-1',
-          temperature: 29,
-          humidity: 55,
-          recordedAt: new Date('2026-07-01T10:00:00Z'),
-        },
-      });
+
+      const { recordedAt, ...rest } = mockPrisma.sensorReading.create.mock.calls[0][0].data;
+      expect(rest).toEqual({ deviceId: 'device-1', temperature: 29, humidity: 55 });
+      expect(recordedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(recordedAt.getTime()).toBeLessThanOrEqual(after.getTime());
     });
 
     it('lève une NotFoundException si aucun device pour le topic', async () => {
@@ -69,10 +68,10 @@ describe('MeasuresService', () => {
       mockPrisma.iotDevice.findUnique.mockResolvedValue(mockDevice);
       mockPrisma.sensorReading.create.mockResolvedValue({});
 
-      await service.record({ ...measure, country: 'EC', warehouse: 'hub-2' });
+      await service.record({ ...measure, country: 'colombie', warehouse: 'entrepot2' });
 
       expect(mockPrisma.iotDevice.findUnique).toHaveBeenCalledWith({
-        where: { mqttTopic: 'EC/hub-2/mesures' },
+        where: { mqttTopic: 'colombie/entrepot2/mesures' },
       });
     });
   });
