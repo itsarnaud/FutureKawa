@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MqttModule } from './mqtt/mqtt.module';
+import { LotsModule } from './lots/lots.module';
 import { PrismaModule } from '@fe/db';
 
 @Module({
@@ -12,6 +13,7 @@ import { PrismaModule } from '@fe/db';
     }),
     PrismaModule,
     MqttModule,
+    LotsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
