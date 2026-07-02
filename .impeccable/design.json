@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-26T10:39:00Z",
+  "title": "Design System: FutureKawa",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Brun Grains de Café",
+        "canonical": "#532a0e",
+        "tonalRamp": [
+          "#1b0e05",
+          "#2f1808",
+          "#41210b",
+          "#532a0e",
+          "#7c4b26",
+          "#a66c42",
+          "#cf9d77",
+          "#f4dfd0"
+        ]
+      },
+      "primary-foreground": {
+        "role": "neutral",
+        "displayName": "Crème Mousse de Lait",
+        "canonical": "#fdfaf7",
+        "tonalRamp": [
+          "#2e2b26",
+          "#5c564c",
+          "#8a8173",
+          "#b8ac99",
+          "#d9cfc0",
+          "#ebe4d8",
+          "#f5eedf",
+          "#fdfaf7"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Titres majeurs de sections et accueil."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texte de lecture par défaut."
+      }
+    },
+    "shadows": [
+      {
+        "name": "interactive-glow",
+        "value": "0 4px 12px rgba(83, 42, 14, 0.08)",
+        "purpose": "Indication de survol d'élément."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Transitions de survol."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Bouton d'action principale.",
+      "html": "<button class=\"ds-btn-primary\">Accéder au dashboard</button>",
+      "css": ".ds-btn-primary { background: #532a0e; color: #fdfaf7; padding: 8px 16px; font-weight: 500; border: none; border-radius: 8px; font-family: ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background-color 0.2s, box-shadow 0.2s; } .ds-btn-primary:hover { background-color: rgba(83, 42, 14, 0.9); box-shadow: 0 4px 12px rgba(83, 42, 14, 0.08); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "L'Atelier de Torréfaction",
+    "overview": "Ce système de design traduit visuellement l'ambiance chaleureuse d'un atelier artisanal de torréfaction combiné à la précision et l'efficacité d'un outil d'administration moderne.",
+    "keyCharacteristics": [
+      "Palette dominante brune et crème chaleureuse.",
+      "Densité confortable favorisant la lecture rapide et l'accessibilité.",
+      "Élévation discrète : les éléments restent plats au repos."
+    ],
+    "rules": [
+      {
+        "name": "The Contrast Rule",
+        "body": "Toute utilisation de la couleur primaire brune pour un arrière-plan interactif ou un badge doit obligatoirement être accompagnée de la couleur crème (#fdfaf7) pour le texte de premier plan.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Tous les boutons et cartes sont dessinés à plat, sans ombre portée au repos. Les ombres n'apparaissent que comme un retour interactif.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do toujours accompagner l'arrière-plan brun par un texte crème (#fdfaf7) ou blanc.",
+      "Do conserver un style à plat au repos pour les conteneurs et les cartes."
+    ],
+    "donts": [
+      "Don't utiliser du bleu ou du gris froid pour les actions majeures.",
+      "Don't ajouter de bande de couleur accentuée sur les bords des cartes."
+    ]
+  }
+}
