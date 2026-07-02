@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
 import { CountryApiService } from '../country-api/country-api.service';
 
 @Controller('alerts')
@@ -6,12 +6,21 @@ export class AlertsController {
   constructor(private readonly countryApi: CountryApiService) {}
 
   @Get()
-  findAll(@Query('warehouseId') warehouseId?: string, @Query('sent') sent?: string) {
+  findAll(
+    @Query('country') country?: string,
+    @Query('warehouseId') warehouseId?: string,
+    @Query('sent') sent?: string,
+  ) {
     const params = new URLSearchParams();
     if (warehouseId) params.set('warehouseId', warehouseId);
     if (sent !== undefined) params.set('sent', sent);
+    const path = `alerts${params.toString() ? `?${params.toString()}` : ''}`;
 
-    const query = params.toString();
-    return this.countryApi.get(`alerts${query ? `?${query}` : ''}`);
+    if (country) {
+      if (!this.countryApi.isValidCountry(country)) throw new BadRequestException(`Invalid country code: ${country}`);
+      return this.countryApi.get(country, path);
+    }
+
+    return this.countryApi.getAll(path);
   }
 }
