@@ -13,6 +13,10 @@ const config = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   coverageDirectory: '../../coverage/apps/fe',
   testEnvironment: 'jsdom',
+  moduleNameMapper: {
+    '^react$': '<rootDir>/../../node_modules/react',
+    '^react-dom$': '<rootDir>/../../node_modules/react-dom',
+  },
 };
 
 module.exports = createJestConfig(config);

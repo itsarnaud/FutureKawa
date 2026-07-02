@@ -52,3 +52,10 @@ out
 .claude/worktrees
 .claude/settings.local.json
 /generated/prisma
+
+.agents
+.claude
+.codex
+.opencode
+.gemini
+.impeccable

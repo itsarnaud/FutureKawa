@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Log in",
+    "dashboard": "Dashboard"
+  },
+  "hero": {
+    "badge": "Simplified management",
+    "title": "Welcome to",
+    "subtitle": "Manage your business from one place.",
+    "cta_primary": "Go to dashboard",
+    "cta_secondary": "Learn more"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "orders": "Orders",
+    "customers": "Customers",
+    "inventory": "Inventory",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login_title": "Log in",
+    "login_description": "Enter your credentials to access your account.",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Log in",
+    "cancel": "Cancel"
+  },
+  "errors": {
+    "not_found": "Page not found",
+    "unauthorized": "Unauthorized",
+    "server_error": "Server error"
+  }
+}
