@@ -24,7 +24,7 @@ PubSubClient client(espClient);
 
 // Variables
 unsigned long lastMsg = 0;
-const long interval = 10000; // 10 secondes pour tester
+const long interval = 300000; // 5 minutes en millisecondes
 
 void setup_wifi() {
   delay(10);
@@ -48,18 +48,18 @@ void setup_wifi() {
 void setup_time() {
   // Configurer NTP pour obtenir l'heure exacte
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-  
+
   Serial.print("Synchronisation de l'heure... ");
   time_t now = time(nullptr);
   int retries = 0;
-  
+
   while (now < 24 * 3600 && retries < 20) {
     delay(500);
     Serial.print(".");
     now = time(nullptr);
     retries++;
   }
-  
+
   Serial.println();
   Serial.print("Heure actuelle: ");
   Serial.println(ctime(&now));
@@ -68,10 +68,10 @@ void setup_time() {
 String get_iso8601_time() {
   time_t now = time(nullptr);
   struct tm* timeinfo = localtime(&now);
-  
+
   char buffer[25];
   strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%SZ", timeinfo);
-  
+
   return String(buffer);
 }
 
@@ -93,11 +93,19 @@ void setup() {
   Serial.begin(115200);
   dht.begin();
   setup_wifi();
-  setup_time();  // Ajouter cette ligne
+  setup_time();
   client.setServer(mqtt_server, mqtt_port);
 }
 
 void loop() {
+  // 1. Vérifier et gérer une éventuelle coupure WiFi (priorité,
+  //    car MQTT dépend entièrement du WiFi)
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi déconnecté, tentative de reconnexion...");
+    setup_wifi();
+  }
+
+  // 2. Vérifier et gérer une éventuelle déconnexion du broker MQTT
   if (!client.connected()) {
     reconnect();
   }
@@ -129,8 +137,8 @@ void loop() {
 
     // Construction du payload JSON
     char payload[200];
-    snprintf(payload, sizeof(payload), 
-             "{\"temperature\":%.1f,\"humidite\":%.1f,\"timestamp\":\"%s\"}", 
+    snprintf(payload, sizeof(payload),
+             "{\"temperature\":%.1f,\"humidite\":%.1f,\"timestamp\":\"%s\"}",
              temp, hum, iso_time.c_str());
 
     // Publication MQTT
