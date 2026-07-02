@@ -1,0 +1,27 @@
+{
+  "id": "2c8dec8c",
+  "phase": "completed",
+  "pageUrl": "/",
+  "sourceFile": "apps/fe/src/app/(dashboard)/layout.tsx",
+  "expectedVariants": 3,
+  "arrivedVariants": 3,
+  "visibleVariant": 1,
+  "paramValues": {
+    "canvas-tint": "warm-cream"
+  },
+  "pendingEventSeq": null,
+  "pendingEvent": null,
+  "deliveryLease": null,
+  "checkpointRevision": 12,
+  "activeOwner": "e6b709e7",
+  "sourceMarkers": {},
+  "fallbackMode": null,
+  "annotationArtifacts": [],
+  "diagnostics": [
+    {
+      "error": "stale_checkpoint_ignored",
+      "revision": 1
+    }
+  ],
+  "updatedAt": "2026-05-26T10:44:01.595Z"
+}

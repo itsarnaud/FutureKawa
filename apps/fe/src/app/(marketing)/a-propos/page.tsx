@@ -6,7 +6,7 @@ export default function AboutPage() {
       <div className="max-w-2xl">
         <h1 className="mb-4 text-4xl font-bold tracking-tight">
           À propos de{" "}
-          <span style={{ color: "#532a0e" }}>{APP_NAME}</span>
+          <span className="text-primary">{APP_NAME}</span>
         </h1>
         <p className="text-lg text-muted-foreground">
           {/* À compléter */}
