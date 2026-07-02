@@ -51,3 +51,4 @@ out
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
+/generated/prisma
