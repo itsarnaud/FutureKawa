@@ -33,18 +33,58 @@ services:
       - ./IOT/broker/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - ./IOT/broker/data/colombie:/mosquitto/data
 
-  postgres:
+  postgres-bresil:
     image: postgres:17-alpine
-    env_file:
-      - .env
+    container_name: postgres-bresil
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - '${POSTGRES_PORT}:5432'
+      - '${POSTGRES_PORT_BR}:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_bresil:/var/lib/postgresql/data
+    networks:
+      - futurekawa-network
+
+  postgres-equateur:
+    image: postgres:17-alpine
+    container_name: postgres-equateur
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '${POSTGRES_PORT_EC}:5432'
+    volumes:
+      - postgres_data_equateur:/var/lib/postgresql/data
+    networks:
+      - futurekawa-network
+
+  postgres-colombie:
+    image: postgres:17-alpine
+    container_name: postgres-colombie
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '${POSTGRES_PORT_CO}:5432'
+    volumes:
+      - postgres_data_colombie:/var/lib/postgresql/data
+    networks:
+      - futurekawa-network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
     networks:
       - futurekawa-network
 
@@ -69,15 +109,18 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-bresil:5432/${POSTGRES_DB}?schema=public
       MQTT_HOST: mosquitto-bresil
       MQTT_PORT: 1883
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
       PORT: 3000
     ports:
       - '3000:3000'
     depends_on:
-      - postgres
+      - postgres-bresil
       - mosquitto-bresil
+      - mailpit
     networks:
       - futurekawa-network
 
@@ -90,15 +133,18 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-equateur:5432/${POSTGRES_DB}?schema=public
       MQTT_HOST: mosquitto-equateur
       MQTT_PORT: 1883
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
       PORT: 3000
     ports:
       - '3002:3000'
     depends_on:
-      - postgres
+      - postgres-equateur
       - mosquitto-equateur
+      - mailpit
     networks:
       - futurekawa-network
 
@@ -111,15 +157,18 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-colombie:5432/${POSTGRES_DB}?schema=public
       MQTT_HOST: mosquitto-colombie
       MQTT_PORT: 1883
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
       PORT: 3000
     ports:
       - '3003:3000'
     depends_on:
-      - postgres
+      - postgres-colombie
       - mosquitto-colombie
+      - mailpit
     networks:
       - futurekawa-network
 
@@ -146,7 +195,9 @@ services:
       - futurekawa-network
 
 volumes:
-  postgres_data:
+  postgres_data_bresil:
+  postgres_data_equateur:
+  postgres_data_colombie:
   redis_data:
 
 networks:
