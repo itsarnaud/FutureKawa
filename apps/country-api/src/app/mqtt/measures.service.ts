@@ -1,6 +1,6 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '@fe/db';
-import { AlertsService } from '../alerts/alerts.service';
 import { MeasureDto } from './dto/measure.dto';
 
 interface WarehouseMeasure extends MeasureDto {
@@ -14,7 +14,7 @@ export class MeasuresService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly alertsService: AlertsService,
+    @Inject('ALERTING_CLIENT') private readonly alertingClient: ClientProxy,
   ) {}
 
   async record(measure: WarehouseMeasure): Promise<void> {
@@ -38,7 +38,11 @@ export class MeasuresService {
       },
     });
 
-    await this.alertsService.checkThresholds(device.warehouseId, measure.temperature, measure.humidite);
+    this.alertingClient.emit('internal/reading-recorded', {
+      warehouseId: device.warehouseId,
+      temperature: measure.temperature,
+      humidity: measure.humidite,
+    });
 
     this.logger.log(
       `Recorded reading for device ${device.id} — temp: ${measure.temperature}°C, humidity: ${measure.humidite}%`,

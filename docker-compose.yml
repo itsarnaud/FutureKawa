@@ -172,6 +172,69 @@ services:
     networks:
       - futurekawa-network
 
+  alerting-bresil:
+    build:
+      context: .
+      dockerfile: apps/alerting-service/Dockerfile
+    container_name: alerting-bresil
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-bresil:5432/${POSTGRES_DB}?schema=public
+      MQTT_HOST: mosquitto-bresil
+      MQTT_PORT: 1883
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      - postgres-bresil
+      - mosquitto-bresil
+      - mailpit
+    networks:
+      - futurekawa-network
+
+  alerting-equateur:
+    build:
+      context: .
+      dockerfile: apps/alerting-service/Dockerfile
+    container_name: alerting-equateur
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-equateur:5432/${POSTGRES_DB}?schema=public
+      MQTT_HOST: mosquitto-equateur
+      MQTT_PORT: 1883
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      - postgres-equateur
+      - mosquitto-equateur
+      - mailpit
+    networks:
+      - futurekawa-network
+
+  alerting-colombie:
+    build:
+      context: .
+      dockerfile: apps/alerting-service/Dockerfile
+    container_name: alerting-colombie
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-colombie:5432/${POSTGRES_DB}?schema=public
+      MQTT_HOST: mosquitto-colombie
+      MQTT_PORT: 1883
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      - postgres-colombie
+      - mosquitto-colombie
+      - mailpit
+    networks:
+      - futurekawa-network
+
   gateway:
     build:
       context: .
