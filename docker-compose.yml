@@ -60,6 +60,91 @@ services:
     networks:
       - futurekawa-network
 
+  country-api-bresil:
+    build:
+      context: .
+      dockerfile: apps/country-api/Dockerfile
+    container_name: country-api-bresil
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      MQTT_HOST: mosquitto-bresil
+      MQTT_PORT: 1883
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+      - mosquitto-bresil
+    networks:
+      - futurekawa-network
+
+  country-api-equateur:
+    build:
+      context: .
+      dockerfile: apps/country-api/Dockerfile
+    container_name: country-api-equateur
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      MQTT_HOST: mosquitto-equateur
+      MQTT_PORT: 1883
+      PORT: 3000
+    ports:
+      - '3002:3000'
+    depends_on:
+      - postgres
+      - mosquitto-equateur
+    networks:
+      - futurekawa-network
+
+  country-api-colombie:
+    build:
+      context: .
+      dockerfile: apps/country-api/Dockerfile
+    container_name: country-api-colombie
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      MQTT_HOST: mosquitto-colombie
+      MQTT_PORT: 1883
+      PORT: 3000
+    ports:
+      - '3003:3000'
+    depends_on:
+      - postgres
+      - mosquitto-colombie
+    networks:
+      - futurekawa-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: apps/gateway/Dockerfile
+    container_name: gateway
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BRAZIL_API_URL: http://country-api-bresil:3000
+      ECUADOR_API_URL: http://country-api-equateur:3000
+      COLOMBIA_API_URL: http://country-api-colombie:3000
+      GATEWAY_PORT: 3010
+    ports:
+      - '${GATEWAY_PORT}:3010'
+    depends_on:
+      - country-api-bresil
+      - country-api-equateur
+      - country-api-colombie
+    networks:
+      - futurekawa-network
+
 volumes:
   postgres_data:
   redis_data:

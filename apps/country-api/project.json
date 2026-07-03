@@ -3,6 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/country-api/src",
   "projectType": "application",
+  "tags": [],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
@@ -66,7 +67,7 @@
           "buildTarget": "country-api:build:production"
         }
       }
-    }
-  },
-  "tags": []
+    },
+    "docker:build": {}
+  }
 }
