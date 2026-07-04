@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { CountryConfig, IoTReading } from "@/lib/constants";
+import React, { useState, useEffect, useMemo } from "react";
+import type { Country, SensorReading } from "@/types/domain";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {
   ResponsiveContainer,
@@ -17,11 +17,11 @@ import {
 import { Thermometer, Droplets } from "lucide-react";
 
 interface IoTChartsProps {
-  country: CountryConfig;
-  data: IoTReading[];
+  country: Country;
+  readings: SensorReading[];
 }
 
-export function IoTCharts({ country, data }: IoTChartsProps) {
+export function IoTCharts({ country, readings }: IoTChartsProps) {
   const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch with Recharts in Next.js
@@ -29,10 +29,24 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
     setMounted(true);
   }, []);
 
-  const tempMin = country.tempTarget - country.tempTolerance;
-  const tempMax = country.tempTarget + country.tempTolerance;
-  const humMin = country.humidityTarget - country.humidityTolerance;
-  const humMax = country.humidityTarget + country.humidityTolerance;
+  // The API returns readings newest-first; charts need chronological order,
+  // and a human-readable time label derived from `recordedAt`.
+  const chartData = useMemo(() => {
+    return [...readings]
+      .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime())
+      .map((reading) => ({
+        ...reading,
+        time: new Date(reading.recordedAt).toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }));
+  }, [readings]);
+
+  const tempMin = country.tempIdeal - country.tempTolerance;
+  const tempMax = country.tempIdeal + country.tempTolerance;
+  const humMin = country.humidityIdeal - country.humidityTolerance;
+  const humMax = country.humidityIdeal + country.humidityTolerance;
 
   if (!mounted) {
     return (
@@ -62,6 +76,30 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
     );
   }
 
+  if (chartData.length === 0) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2">
+        {[
+          { title: "Température Historique", icon: <Thermometer className="size-4 text-[#532a0e]" /> },
+          { title: "Humidité Historique", icon: <Droplets className="size-4 text-blue-500" /> },
+        ].map(({ title, icon }) => (
+          <Card key={title} className="border-border">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                {icon}
+                {title}
+              </CardTitle>
+              <CardDescription>{country.name}</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[240px] flex items-center justify-center text-sm text-muted-foreground bg-muted/10 rounded-lg">
+              Pas encore de mesures pour cet entrepôt.
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {/* Temperature Chart */}
@@ -76,7 +114,7 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
             </CardTitle>
             <div className="text-xs text-right">
               <span className="font-semibold text-[#532a0e]">
-                Cible: {country.tempTarget}°C
+                Cible: {country.tempIdeal}°C
               </span>
               <span className="text-muted-foreground ml-1.5">
                 (±{country.tempTolerance}°C)
@@ -91,7 +129,7 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
           <div className="h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={data}
+                data={chartData}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
                 <defs>
@@ -150,7 +188,7 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
                 />
                 {/* Target Line */}
                 <ReferenceLine
-                  y={country.tempTarget}
+                  y={country.tempIdeal}
                   stroke="#532a0e"
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
@@ -182,7 +220,7 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
             </CardTitle>
             <div className="text-xs text-right">
               <span className="font-semibold text-blue-600">
-                Cible: {country.humidityTarget}%
+                Cible: {country.humidityIdeal}%
               </span>
               <span className="text-muted-foreground ml-1.5">
                 (±{country.humidityTolerance}%)
@@ -197,7 +235,7 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
           <div className="h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={data}
+                data={chartData}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
                 <defs>
@@ -256,7 +294,7 @@ export function IoTCharts({ country, data }: IoTChartsProps) {
                 />
                 {/* Target Line */}
                 <ReferenceLine
-                  y={country.humidityTarget}
+                  y={country.humidityIdeal}
                   stroke="#3b82f6"
                   strokeDasharray="4 4"
                   strokeWidth={1.5}

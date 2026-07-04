@@ -3,25 +3,26 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ComponentType } from "react";
 import {
   LayoutDashboard,
-  ShoppingBag,
-  Users,
   Package,
+  Warehouse,
+  Bell,
   Settings,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME, SIDEBAR_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 
-const links = [
-  { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/dashboard/commandes", label: "Commandes", icon: ShoppingBag },
-  { href: "/dashboard/clients", label: "Clients", icon: Users },
-  { href: "/dashboard/stocks", label: "Stocks", icon: Package },
-  { href: "/dashboard/parametres", label: "Paramètres", icon: Settings },
-];
+const ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  LayoutDashboard,
+  Package,
+  Warehouse,
+  Bell,
+  Settings,
+};
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -38,7 +39,8 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 space-y-1 p-3">
-        {links.map(({ href, label, icon: Icon }) => {
+        {SIDEBAR_LINKS.map(({ href, labelFr, icon }) => {
+          const Icon = ICONS[icon];
           const isActive =
             href === "/dashboard"
               ? pathname === "/dashboard"
@@ -56,7 +58,7 @@ export function Sidebar() {
               )}
             >
               <Icon className="size-4 shrink-0" />
-              {label}
+              {labelFr}
             </Link>
           );
         })}
