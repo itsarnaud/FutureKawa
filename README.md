@@ -4,31 +4,9 @@ Suivi multi-pays des stocks de café vert (Brésil, Équateur, Colombie) : traç
 
 ## Architecture
 
-Un backend conteneurisé par pays (BDD + broker MQTT + API REST + alerting), et un backend central qui agrège les 3 pays pour le frontend. Détaillé ici pour le Brésil ; l'Équateur et la Colombie suivent exactement la même structure, en parallèle et isolés les uns des autres.
+Un backend conteneurisé par pays (BDD, broker MQTT, API REST, alerting), et un backend central qui agrège les 3 pays pour le frontend. Chaque pays est isolé des autres : base de données, broker MQTT, `country-api` et `alerting-service` dédiés, sans partage de données au niveau du stockage. Le `gateway` est le seul composant qui connaît les 3 pays.
 
-```mermaid
-flowchart TD
-    FE["Frontend"] --> GW["Gateway<br/>(agrège les 3 pays)"]
-
-    GW --> BR_API
-    GW -.-> EC["country-api Équateur<br/>(même structure)"]
-    GW -.-> CO["country-api Colombie<br/>(même structure)"]
-
-    subgraph Bresil["Pays : Brésil"]
-        BR_API["country-api"] --> BR_DB[("Postgres BR")]
-        BR_API --> BR_MQTT["Broker MQTT BR"]
-        BR_MQTT --> BR_API
-        BR_SENSOR["Capteur ESP8266"] -- "mesures" --> BR_MQTT
-        BR_API -- "emit internal/reading-recorded" --> BR_MQTT
-        BR_MQTT -- "internal/reading-recorded" --> BR_ALERT["alerting-service"]
-        BR_ALERT --> BR_DB
-        BR_ALERT --> MAILPIT["Mailpit (e-mail)"]
-    end
-```
-
-Chaque pays a : sa propre base de données, son propre broker MQTT, son `country-api` (lots, entrepôts, ingestion des mesures) et son `alerting-service` (seuils température/humidité, cron des lots périmés, envoi d'e-mail). Un processus séparé mais qui reste dans le périmètre local du pays. Aucune donnée n'est partagée entre pays au niveau du stockage. Le `gateway` est le seul composant qui connaît les 3 pays.
-
-`country-api` et `alerting-service` communiquent via le broker MQTT du pays : après avoir enregistré une mesure, `country-api` publie un événement interne (`internal/reading-recorded`) que `alerting-service` écoute pour déclencher ses vérifications de seuil.
+Schéma détaillé et flux complet : voir [docs/technique.md](docs/technique.md#41-architecture-globale).
 
 ## Stack
 
@@ -91,6 +69,14 @@ docker-compose.yml # Orchestration complète (BDD, brokers, APIs, gateway, mailp
 scripts/
   start.sh         # Démarrage one-command (build, migrations, seed, récap des URLs)
 ```
+
+## Frontend
+
+> À compléter par le développeur frontend.
+
+- Comment lancer `apps/fe` en local (commande, port)
+- Variables d'environnement nécessaires (ex. `NEXT_PUBLIC_API_URL`, à pointer vers le gateway `http://localhost:3010/api`)
+- Build et déploiement (Docker ou non)
 
 ## Commandes utiles
 
