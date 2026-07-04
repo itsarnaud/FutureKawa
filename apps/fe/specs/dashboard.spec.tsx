@@ -1,115 +1,123 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { StockTable } from "../src/components/dashboard/stock-table";
+import { LotsTable } from "../src/components/dashboard/lots-table";
 import { AlertPanel } from "../src/components/dashboard/alert-panel";
-import { CoffeeLot, CountryConfig } from "../src/lib/constants";
+import type { Lot, Alert } from "../src/types/domain";
 
 // Mock resize observer which is used by Recharts / ResponsiveContainer sometimes (though not directly rendering in these unit tests, good practice)
+/* eslint-disable @typescript-eslint/no-empty-function */
 class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
 }
+/* eslint-enable @typescript-eslint/no-empty-function */
 window.ResizeObserver = ResizeObserver;
 
-const mockLots: CoffeeLot[] = [
+const mockLots: Lot[] = [
   {
-    uuid: "lot-1-conforme",
-    countryId: "br",
-    siteName: "Minas Gerais Site A",
-    entryDate: "2026-05-10",
-    temperature: 29.5,
-    humidity: 55.2,
+    id: "lot-1-conforme",
+    warehouseId: "wh-1",
+    exploitationId: "exp-1",
+    storedAt: "2026-05-10",
     status: "conforme",
+    qualityGrade: "specialty",
+    weightKg: 500,
+    warehouse: { id: "wh-1", name: "Minas Gerais Site A" },
+    exploitation: { id: "exp-1", name: "Fazenda Minas Gerais" },
   },
   {
-    uuid: "lot-2-perime",
-    countryId: "br",
-    siteName: "Santos Port Depot",
-    entryDate: "2025-03-15",
-    temperature: 32.5,
-    humidity: 54.1,
+    id: "lot-2-perime",
+    warehouseId: "wh-2",
+    exploitationId: "exp-2",
+    storedAt: "2025-03-15",
     status: "perime",
+    qualityGrade: "standard",
+    weightKg: 300,
+    warehouse: { id: "wh-2", name: "Santos Port Depot" },
+    exploitation: { id: "exp-2", name: "Fazenda Santos" },
   },
   {
-    uuid: "lot-3-alerte",
-    countryId: "br",
-    siteName: "Minas Gerais Site B",
-    entryDate: "2026-05-20",
-    temperature: 33.2,
-    humidity: 58.5,
+    id: "lot-3-alerte",
+    warehouseId: "wh-1",
+    exploitationId: "exp-1",
+    storedAt: "2026-05-20",
     status: "alerte",
+    qualityGrade: "premium",
+    weightKg: 420,
+    warehouse: { id: "wh-1", name: "Minas Gerais Site B" },
+    exploitation: { id: "exp-1", name: "Fazenda Minas Gerais" },
   },
 ];
 
-const mockCountry: CountryConfig = {
-  id: "br",
-  name: "Brésil",
-  tempTarget: 29,
-  tempTolerance: 3,
-  humidityTarget: 55,
-  humidityTolerance: 2,
-};
+const mockAlerts: Alert[] = [
+  {
+    id: "alert-1",
+    warehouseId: "wh-2",
+    lotId: "lot-2-perime",
+    type: "lot_perime",
+    message: "Lot de café périmé (> 365 jours)",
+    sent: false,
+    triggeredAt: "2026-05-25T10:00:00.000Z",
+    warehouse: { id: "wh-2", name: "Santos Port Depot" },
+    lot: { id: "lot-2-perime", storedAt: "2025-03-15" },
+  },
+  {
+    id: "alert-2",
+    warehouseId: "wh-1",
+    lotId: null,
+    type: "temperature_haute",
+    message: "Seuils environnementaux dépassés sur un lot",
+    sent: true,
+    triggeredAt: "2026-05-25T11:00:00.000Z",
+    warehouse: { id: "wh-1", name: "Minas Gerais Site A" },
+  },
+];
 
-describe("StockTable Component", () => {
+describe("LotsTable Component", () => {
   it("should render list of lots in the table", () => {
-    render(<StockTable lots={mockLots} />);
+    render(<LotsTable lots={mockLots} />);
     expect(screen.getByText("Minas Gerais Site A")).toBeTruthy();
     expect(screen.getByText("Minas Gerais Site B")).toBeTruthy();
     expect(screen.getByText("Santos Port Depot")).toBeTruthy();
   });
 
   it("should filter lots by status when filter buttons are clicked", () => {
-    render(<StockTable lots={mockLots} />);
+    render(<LotsTable lots={mockLots} />);
 
     // Initially all 3 lots are visible
-    expect(screen.queryByText("lot-1-conforme")).toBeTruthy();
-    expect(screen.queryByText("lot-2-perime")).toBeTruthy();
-    expect(screen.queryByText("lot-3-alerte")).toBeTruthy();
+    expect(screen.queryByText("Santos Port Depot")).toBeTruthy();
+    expect(screen.queryByText("Minas Gerais Site A")).toBeTruthy();
+    expect(screen.queryByText("Minas Gerais Site B")).toBeTruthy();
 
     // Click on "Périmé" button
     const perimeFilterBtn = screen.getByRole("button", { name: /Périmé/ });
     fireEvent.click(perimeFilterBtn);
 
-    // Only lot-2-perime should be visible
-    expect(screen.queryByText("lot-2-perime")).toBeTruthy();
-    expect(screen.queryByText("lot-1-conforme")).toBeNull();
-    expect(screen.queryByText("lot-3-alerte")).toBeNull();
+    // Only the "perime" lot should remain visible
+    expect(screen.queryByText("Santos Port Depot")).toBeTruthy();
+    expect(screen.queryByText("Minas Gerais Site A")).toBeNull();
+    expect(screen.queryByText("Minas Gerais Site B")).toBeNull();
   });
 });
 
 describe("AlertPanel Component", () => {
-  it("renders active alerts when anomalies exist", () => {
-    render(
-      <AlertPanel
-        country={mockCountry}
-        lots={mockLots}
-        iotHistory={[{ time: "16:00", temperature: 29.5, humidity: 55.2 }]}
-      />
-    );
+  it("renders active alerts when there are some", () => {
+    render(<AlertPanel alerts={mockAlerts} />);
 
-    // Displays expired lot alert
     expect(screen.getByText("Lot de café périmé (> 365 jours)")).toBeTruthy();
-    // Displays environmental drift alert
     expect(
       screen.getByText("Seuils environnementaux dépassés sur un lot")
     ).toBeTruthy();
   });
 
-  it("renders a success conforming message when no anomalies exist", () => {
-    const conformingLots = [mockLots[0]];
-    render(
-      <AlertPanel
-        country={mockCountry}
-        lots={conformingLots}
-        iotHistory={[{ time: "16:00", temperature: 29.5, humidity: 55.2 }]}
-      />
-    );
+  it("renders a success conforming message when no alerts exist", () => {
+    render(<AlertPanel alerts={[]} contextLabel="Brésil" />);
 
     expect(screen.getByText("Tout est conforme")).toBeTruthy();
     expect(
       screen.getByText(
-        `Les stocks et les valeurs IoT du site ${mockCountry.name} respectent tous les seuils de qualité.`
+        "Les stocks et les valeurs IoT de Brésil respectent tous les seuils de qualité."
       )
     ).toBeTruthy();
   });

@@ -65,6 +65,15 @@
         },
         "production": {
           "buildTarget": "country-api:build:production"
+        },
+        "bresil": {
+          "buildTarget": "country-api:build:development"
+        },
+        "equateur": {
+          "buildTarget": "country-api:build:development"
+        },
+        "colombie": {
+          "buildTarget": "country-api:build:development"
         }
       }
     },

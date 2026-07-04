@@ -1,11 +1,21 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { COUNTRIES, MOCK_LOTS, MOCK_IOT_HISTORY, CountryConfig } from "@/lib/constants";
+import React, { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
+import type { CountryCode } from "@/types/domain";
+import { COUNTRY_META } from "@/lib/constants";
+import { getErrorMessage } from "@/lib/error";
+import { useLots } from "@/hooks/use-lots";
+import { useAlerts } from "@/hooks/use-alerts";
+import { useWarehouses } from "@/hooks/use-warehouses";
+import { useWarehouseReadings } from "@/hooks/use-warehouse-readings";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IoTCharts } from "@/components/dashboard/iot-charts";
-import { StockTable } from "@/components/dashboard/stock-table";
+import { LotsTable } from "@/components/dashboard/lots-table";
 import { AlertPanel } from "@/components/dashboard/alert-panel";
 import {
   Thermometer,
@@ -15,61 +25,73 @@ import {
   Globe,
   Coffee,
   CheckCircle,
-  HelpCircle,
   ArrowRight,
 } from "lucide-react";
 
+const COUNTRY_CODES: CountryCode[] = ["BR", "EC", "CO"];
+
 export default function DashboardPage() {
-  const [selectedCountryId, setSelectedCountryId] = useState<string>("br");
+  const [countryFilter, setCountryFilter] = useState<CountryCode | "ALL">("ALL");
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | undefined>(undefined);
 
-  // Selected country config
-  const activeCountry = useMemo(() => {
-    return COUNTRIES.find((c) => c.id === selectedCountryId) || COUNTRIES[0];
-  }, [selectedCountryId]);
+  const activeCountry = countryFilter === "ALL" ? undefined : countryFilter;
 
-  // Selected country lots
-  const activeLots = useMemo(() => {
-    return MOCK_LOTS.filter((lot) => lot.countryId === selectedCountryId);
-  }, [selectedCountryId]);
+  const { data: lots, loading: lotsLoading, error: lotsError, refetch: refetchLots } = useLots({
+    country: activeCountry,
+  });
+  const { data: alerts, loading: alertsLoading, error: alertsError, refetch: refetchAlerts } = useAlerts({
+    country: activeCountry,
+  });
+  const { data: warehouses, loading: warehousesLoading, error: warehousesError } = useWarehouses(
+    activeCountry
+  );
 
-  // Selected country IoT history
-  const activeIoTHistory = useMemo(() => {
-    return MOCK_IOT_HISTORY[selectedCountryId] || [];
-  }, [selectedCountryId]);
+  // Reset the selected warehouse whenever the country context changes, and
+  // default to the first warehouse available in that context.
+  useEffect(() => {
+    setSelectedWarehouseId(warehouses?.[0]?.id);
+  }, [countryFilter, warehouses]);
 
-  // Selected country latest reading
-  const latestReading = useMemo(() => {
-    if (activeIoTHistory.length === 0) return null;
-    return activeIoTHistory[activeIoTHistory.length - 1];
-  }, [activeIoTHistory]);
+  const selectedWarehouse = useMemo(
+    () => warehouses?.find((w) => w.id === selectedWarehouseId),
+    [warehouses, selectedWarehouseId]
+  );
 
-  // Stats calculations
-  const stats = useMemo(() => {
-    const total = activeLots.length;
-    const conforme = activeLots.filter((l) => l.status === "conforme").length;
-    const alerte = activeLots.filter((l) => l.status === "alerte").length;
-    const perime = activeLots.filter((l) => l.status === "perime").length;
+  const { data: readings } = useWarehouseReadings(
+    selectedWarehouse?.id,
+    selectedWarehouse?.country.code,
+    { limit: 50 }
+  );
 
-    // Check if current IoT reading is drifting
-    const tempDrift = latestReading
-      ? latestReading.temperature < activeCountry.tempTarget - activeCountry.tempTolerance ||
-        latestReading.temperature > activeCountry.tempTarget + activeCountry.tempTolerance
-      : false;
+  const kpis = useMemo(() => {
+    const total = lots?.length ?? 0;
+    const conforme = lots?.filter((l) => l.status === "conforme").length ?? 0;
+    const alerte = lots?.filter((l) => l.status === "alerte").length ?? 0;
+    const perime = lots?.filter((l) => l.status === "perime").length ?? 0;
+    const activeAlerts = alerts?.length ?? 0;
 
-    const humDrift = latestReading
-      ? latestReading.humidity < activeCountry.humidityTarget - activeCountry.humidityTolerance ||
-        latestReading.humidity > activeCountry.humidityTarget + activeCountry.humidityTolerance
-      : false;
+    const latest = readings && readings.length > 0
+      ? [...readings].sort(
+          (a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+        )[0]
+      : undefined;
+    const country = selectedWarehouse?.country;
 
-    return {
-      total,
-      conforme,
-      alerte,
-      perime,
-      tempDrift,
-      humDrift,
-    };
-  }, [activeLots, latestReading, activeCountry]);
+    const tempDrift =
+      country && latest
+        ? latest.temperature < country.tempIdeal - country.tempTolerance ||
+          latest.temperature > country.tempIdeal + country.tempTolerance
+        : false;
+    const humDrift =
+      country && latest
+        ? latest.humidity < country.humidityIdeal - country.humidityTolerance ||
+          latest.humidity > country.humidityIdeal + country.humidityTolerance
+        : false;
+
+    return { total, conforme, alerte, perime, activeAlerts, tempDrift, humDrift, latest, country };
+  }, [lots, alerts, readings, selectedWarehouse]);
+
+  const errors = [lotsError, alertsError, warehousesError].filter(Boolean);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -95,26 +117,40 @@ export default function DashboardPage() {
             <Globe className="size-3" />
             CONTEXTE PAYS ACTIF
           </label>
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border border-border/80">
-            {COUNTRIES.map((country) => (
-              <button
-                key={country.id}
-                onClick={() => setSelectedCountryId(country.id)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 ${
-                  selectedCountryId === country.id
-                    ? "bg-[#532a0e] text-[#fdfaf7] shadow-sm font-bold scale-[1.02]"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                }`}
-              >
-                <span>
-                  {country.id === "br" ? "🇧🇷" : country.id === "co" ? "🇨🇴" : "🇪🇨"}
-                </span>
-                {country.name}
-              </button>
-            ))}
-          </div>
+          <Tabs
+            value={countryFilter}
+            onValueChange={(v) => setCountryFilter(v as CountryCode | "ALL")}
+          >
+            <TabsList>
+              <TabsTrigger value="ALL">Tous pays</TabsTrigger>
+              {COUNTRY_CODES.map((code) => (
+                <TabsTrigger key={code} value={code}>
+                  {COUNTRY_META[code].flag} {COUNTRY_META[code].short}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
       </div>
+
+      {errors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTitle>Erreur de chargement</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-4">
+            <span>{getErrorMessage(errors[0])}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                refetchLots();
+                refetchAlerts();
+              }}
+            >
+              Réessayer
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* KPI Cards Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -126,7 +162,7 @@ export default function DashboardPage() {
             </CardTitle>
             <span
               className={`p-1 rounded-full ${
-                stats.tempDrift
+                kpis.tempDrift
                   ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20"
                   : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20"
               }`}
@@ -137,21 +173,29 @@ export default function DashboardPage() {
           <CardContent>
             <div className="flex items-baseline gap-1.5">
               <span className="text-3xl font-bold tracking-tight">
-                {latestReading ? `${latestReading.temperature.toFixed(1)}°C` : "—"}
+                {kpis.latest ? `${kpis.latest.temperature.toFixed(1)}°C` : "—"}
               </span>
-              {stats.tempDrift ? (
-                <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 text-[10px] py-0">
-                  Dérive
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 text-[10px] py-0">
-                  Cible
-                </Badge>
+              {kpis.latest && (
+                kpis.tempDrift ? (
+                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 text-[10px] py-0">
+                    Dérive
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 text-[10px] py-0">
+                    Cible
+                  </Badge>
+                )
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-1.5 flex items-center justify-between">
-              <span>Seuil cible : {activeCountry.tempTarget}°C</span>
-              <span>Tolérance : ±{activeCountry.tempTolerance}°C</span>
+              {kpis.country ? (
+                <>
+                  <span>Seuil cible : {kpis.country.tempIdeal}°C</span>
+                  <span>Tolérance : ±{kpis.country.tempTolerance}°C</span>
+                </>
+              ) : (
+                <span>Sélectionnez un pays pour voir les mesures en direct.</span>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -164,7 +208,7 @@ export default function DashboardPage() {
             </CardTitle>
             <span
               className={`p-1 rounded-full ${
-                stats.humDrift
+                kpis.humDrift
                   ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20"
                   : "bg-blue-50 text-blue-600 dark:bg-blue-950/20"
               }`}
@@ -175,21 +219,29 @@ export default function DashboardPage() {
           <CardContent>
             <div className="flex items-baseline gap-1.5">
               <span className="text-3xl font-bold tracking-tight">
-                {latestReading ? `${latestReading.humidity.toFixed(1)}%` : "—"}
+                {kpis.latest ? `${kpis.latest.humidity.toFixed(1)}%` : "—"}
               </span>
-              {stats.humDrift ? (
-                <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 text-[10px] py-0">
-                  Dérive
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 text-[10px] py-0">
-                  Cible
-                </Badge>
+              {kpis.latest && (
+                kpis.humDrift ? (
+                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 text-[10px] py-0">
+                    Dérive
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 text-[10px] py-0">
+                    Cible
+                  </Badge>
+                )
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-1.5 flex items-center justify-between">
-              <span>Seuil cible : {activeCountry.humidityTarget}%</span>
-              <span>Tolérance : ±{activeCountry.humidityTolerance}%</span>
+              {kpis.country ? (
+                <>
+                  <span>Seuil cible : {kpis.country.humidityIdeal}%</span>
+                  <span>Tolérance : ±{kpis.country.humidityTolerance}%</span>
+                </>
+              ) : (
+                <span>Sélectionnez un pays pour voir les mesures en direct.</span>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -206,21 +258,23 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold tracking-tight">{stats.total}</span>
+              <span className="text-3xl font-bold tracking-tight">
+                {lotsLoading ? "…" : kpis.total}
+              </span>
               <span className="text-xs text-muted-foreground">unités</span>
             </div>
             <div className="text-[10px] flex items-center gap-1.5 mt-2">
               <span className="flex items-center gap-0.5 text-emerald-600">
-                ● {stats.conforme} conforme
+                ● {kpis.conforme} conforme
               </span>
-              {stats.alerte > 0 && (
+              {kpis.alerte > 0 && (
                 <span className="flex items-center gap-0.5 text-amber-600">
-                  ● {stats.alerte} alerte
+                  ● {kpis.alerte} alerte
                 </span>
               )}
-              {stats.perime > 0 && (
+              {kpis.perime > 0 && (
                 <span className="flex items-center gap-0.5 text-rose-600 font-semibold">
-                  ● {stats.perime} périmé
+                  ● {kpis.perime} périmé
                 </span>
               )}
             </div>
@@ -235,7 +289,7 @@ export default function DashboardPage() {
             </CardTitle>
             <span
               className={`p-1 rounded-full ${
-                stats.perime > 0 || stats.alerte > 0 || stats.tempDrift || stats.humDrift
+                kpis.activeAlerts > 0
                   ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20"
                   : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20"
               }`}
@@ -247,17 +301,17 @@ export default function DashboardPage() {
             <div className="flex items-baseline gap-1.5">
               <span
                 className={`text-3xl font-bold tracking-tight ${
-                  stats.perime > 0 ? "text-rose-600" : stats.alerte > 0 ? "text-amber-600" : "text-zinc-900 dark:text-zinc-50"
+                  kpis.perime > 0 ? "text-rose-600" : kpis.activeAlerts > 0 ? "text-amber-600" : "text-zinc-900 dark:text-zinc-50"
                 }`}
               >
-                {stats.perime + stats.alerte + (stats.tempDrift ? 1 : 0) + (stats.humDrift ? 1 : 0)}
+                {alertsLoading ? "…" : kpis.activeAlerts}
               </span>
               <span className="text-xs text-muted-foreground">actives</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              {stats.perime > 0
+              {kpis.perime > 0
                 ? "Traitement FIFO urgent requis."
-                : stats.alerte > 0
+                : kpis.activeAlerts > 0
                 ? "Contrôler les conditions du site."
                 : "Qualité optimale du stockage."}
             </p>
@@ -269,15 +323,26 @@ export default function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Charts: Cols 2 */}
         <div className="lg:col-span-2 space-y-6">
-          <IoTCharts country={activeCountry} data={activeIoTHistory} />
+          {selectedWarehouse ? (
+            <IoTCharts country={selectedWarehouse.country} readings={readings ?? []} />
+          ) : (
+            <Card className="border-border h-full flex items-center justify-center min-h-[240px]">
+              <CardContent className="text-center text-sm text-muted-foreground pt-6">
+                {warehousesLoading
+                  ? "Chargement des entrepôts..."
+                  : countryFilter === "ALL"
+                  ? "Sélectionnez un pays pour afficher les courbes IoT d'un entrepôt."
+                  : "Aucun entrepôt trouvé pour ce pays."}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Alerts: Col 1 */}
         <div className="lg:col-span-1">
           <AlertPanel
-            country={activeCountry}
-            lots={activeLots}
-            iotHistory={activeIoTHistory}
+            alerts={alerts ?? []}
+            contextLabel={countryFilter === "ALL" ? undefined : COUNTRY_META[countryFilter].short}
           />
         </div>
       </div>
@@ -292,13 +357,20 @@ export default function DashboardPage() {
                 Suivi FIFO des Stocks
               </CardTitle>
               <CardDescription>
-                Lots en transit / stockés au site {activeCountry.name}. Le stock le plus ancien doit être sorti en premier.
+                Lots en transit / stockés
+                {countryFilter !== "ALL" ? ` au ${COUNTRY_META[countryFilter].short}` : " (tous pays)"}
+                . Le stock le plus ancien doit être sorti en premier.
               </CardDescription>
             </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard/lots" className="flex items-center gap-1 text-xs">
+                Voir tous les lots <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          <StockTable lots={activeLots} />
+          <LotsTable lots={lots ?? []} showExploitation />
         </CardContent>
       </Card>
     </div>

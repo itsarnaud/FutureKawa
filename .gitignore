@@ -51,14 +51,14 @@ out
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
+/generated/prisma
 
 .agents
 .claude
 .codex
 .opencode
 .gemini
-
-/generated/prisma
+.impeccable
 
 # Mosquitto broker runtime data
 IOT/broker/data/
