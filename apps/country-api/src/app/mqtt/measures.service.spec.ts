@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { MeasuresService } from './measures.service';
-import { AlertsService } from '../alerts/alerts.service';
 import { PrismaService } from '@fe/db';
 
 const mockDevice = {
@@ -16,7 +15,7 @@ const mockPrisma = {
   sensorReading: { create: jest.fn() },
 };
 
-const mockAlertsService = { checkThresholds: jest.fn() };
+const mockAlertingClient = { emit: jest.fn() };
 
 describe('MeasuresService', () => {
   let service: MeasuresService;
@@ -26,7 +25,7 @@ describe('MeasuresService', () => {
       providers: [
         MeasuresService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: AlertsService, useValue: mockAlertsService },
+        { provide: 'ALERTING_CLIENT', useValue: mockAlertingClient },
       ],
     }).compile();
 
@@ -59,6 +58,12 @@ describe('MeasuresService', () => {
       expect(rest).toEqual({ deviceId: 'device-1', temperature: 29, humidity: 55 });
       expect(recordedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
       expect(recordedAt.getTime()).toBeLessThanOrEqual(after.getTime());
+
+      expect(mockAlertingClient.emit).toHaveBeenCalledWith('internal/reading-recorded', {
+        warehouseId: 'wh-1',
+        temperature: 29,
+        humidity: 55,
+      });
     });
 
     it('lève une NotFoundException si aucun device pour le topic', async () => {
