@@ -257,6 +257,26 @@ services:
     networks:
       - futurekawa-network
 
+  fe:
+    build:
+      context: .
+      dockerfile: apps/fe/Dockerfile
+      args:
+        # NEXT_PUBLIC_* vars are inlined into the browser bundle at build
+        # time, so this must be reachable from wherever the browser runs
+        # (the host's mapped gateway port, not the container network) —
+        # override it in .env if you're not on plain localhost (Codespaces,
+        # a remote host, etc.).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3010/api}
+    container_name: fe
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    depends_on:
+      - gateway
+    networks:
+      - futurekawa-network
+
 volumes:
   postgres_data_bresil:
   postgres_data_equateur:
