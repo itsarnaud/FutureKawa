@@ -5,138 +5,107 @@ import { PrismaPg } from '@prisma/adapter-pg';
 const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL'] });
 const prisma = new PrismaClient({ adapter });
 
-async function main() {
-  // ─── Pays ────────────────────────────────────────────────────────────────────
-  const brazil = await prisma.country.upsert({
-    where: { code: 'BR' },
+// Each country now runs in its own database. SEED_COUNTRY restricts the
+// seed to a single country (used by each country-api instance); leaving it
+// unset seeds all three, e.g. for local dev against a single shared DB.
+const seedCountry = process.env['SEED_COUNTRY'];
+
+type CountrySeed = {
+  code: 'BR' | 'EC' | 'CO';
+  name: string;
+  tempIdeal: number;
+  humidityIdeal: number;
+  warehouse: { id: string; name: string; address: string; managerEmail: string };
+  exploitation: { id: string; name: string; location: string };
+  device: { mqttTopic: string };
+  lots: { id: string; weightKg: number; storedAt: string }[];
+};
+
+const countries: CountrySeed[] = [
+  {
+    code: 'BR',
+    name: 'Brésil',
+    tempIdeal: 29,
+    humidityIdeal: 55,
+    warehouse: { id: 'wh-br-sao-paulo', name: 'Hub São Paulo', address: 'Av. Paulista, São Paulo, SP', managerEmail: 'manager.brazil@futurekawa.com' },
+    exploitation: { id: 'exp-br-minas', name: 'Fazenda Minas Gerais', location: 'Minas Gerais, Brésil' },
+    device: { mqttTopic: 'bresil/entrepot1/mesures' },
+    lots: [
+      { id: 'lot-br-001', weightKg: 500, storedAt: '2026-01-15' },
+      { id: 'lot-br-002', weightKg: 320, storedAt: '2026-03-10' },
+    ],
+  },
+  {
+    code: 'EC',
+    name: 'Équateur',
+    tempIdeal: 31,
+    humidityIdeal: 60,
+    warehouse: { id: 'wh-ec-quito', name: 'Hub Quito', address: 'Av. Amazonas, Quito', managerEmail: 'manager.ecuador@futurekawa.com' },
+    exploitation: { id: 'exp-ec-pichincha', name: 'Finca Pichincha', location: 'Province de Pichincha, Équateur' },
+    device: { mqttTopic: 'equateur/entrepot1/mesures' },
+    lots: [{ id: 'lot-ec-001', weightKg: 410, storedAt: '2026-02-20' }],
+  },
+  {
+    code: 'CO',
+    name: 'Colombie',
+    tempIdeal: 26,
+    humidityIdeal: 80,
+    warehouse: { id: 'wh-co-bogota', name: 'Hub Bogotá', address: 'Calle 26, Bogotá', managerEmail: 'manager.colombia@futurekawa.com' },
+    exploitation: { id: 'exp-co-huila', name: 'Finca Huila', location: 'Département de Huila, Colombie' },
+    device: { mqttTopic: 'colombie/entrepot1/mesures' },
+    lots: [{ id: 'lot-co-001', weightKg: 275, storedAt: '2026-04-05' }],
+  },
+];
+
+async function seedCountryData(c: CountrySeed) {
+  const country = await prisma.country.upsert({
+    where: { code: c.code },
     update: {},
-    create: { code: 'BR', name: 'Brésil', tempIdeal: 29, humidityIdeal: 55 },
+    create: { code: c.code, name: c.name, tempIdeal: c.tempIdeal, humidityIdeal: c.humidityIdeal },
   });
 
-  const ecuador = await prisma.country.upsert({
-    where: { code: 'EC' },
+  const warehouse = await prisma.warehouse.upsert({
+    where: { id: c.warehouse.id },
     update: {},
-    create: { code: 'EC', name: 'Équateur', tempIdeal: 31, humidityIdeal: 60 },
+    create: { ...c.warehouse, countryId: country.id },
   });
 
-  const colombia = await prisma.country.upsert({
-    where: { code: 'CO' },
+  const exploitation = await prisma.exploitation.upsert({
+    where: { id: c.exploitation.id },
     update: {},
-    create: { code: 'CO', name: 'Colombie', tempIdeal: 26, humidityIdeal: 80 },
-  });
-
-  // ─── Entrepôts ───────────────────────────────────────────────────────────────
-  const whBR = await prisma.warehouse.upsert({
-    where: { id: 'wh-br-sao-paulo' },
-    update: {},
-    create: {
-      id: 'wh-br-sao-paulo',
-      countryId: brazil.id,
-      name: 'Hub São Paulo',
-      address: 'Av. Paulista, São Paulo, SP',
-      managerEmail: 'manager.brazil@futurekawa.com',
-    },
-  });
-
-  const whEC = await prisma.warehouse.upsert({
-    where: { id: 'wh-ec-quito' },
-    update: {},
-    create: {
-      id: 'wh-ec-quito',
-      countryId: ecuador.id,
-      name: 'Hub Quito',
-      address: 'Av. Amazonas, Quito',
-      managerEmail: 'manager.ecuador@futurekawa.com',
-    },
-  });
-
-  const whCO = await prisma.warehouse.upsert({
-    where: { id: 'wh-co-bogota' },
-    update: {},
-    create: {
-      id: 'wh-co-bogota',
-      countryId: colombia.id,
-      name: 'Hub Bogotá',
-      address: 'Calle 26, Bogotá',
-      managerEmail: 'manager.colombia@futurekawa.com',
-    },
-  });
-
-  // ─── Exploitations ───────────────────────────────────────────────────────────
-  const expBR = await prisma.exploitation.upsert({
-    where: { id: 'exp-br-minas' },
-    update: {},
-    create: {
-      id: 'exp-br-minas',
-      countryId: brazil.id,
-      name: 'Fazenda Minas Gerais',
-      location: 'Minas Gerais, Brésil',
-    },
-  });
-
-  const expEC = await prisma.exploitation.upsert({
-    where: { id: 'exp-ec-pichincha' },
-    update: {},
-    create: {
-      id: 'exp-ec-pichincha',
-      countryId: ecuador.id,
-      name: 'Finca Pichincha',
-      location: 'Province de Pichincha, Équateur',
-    },
-  });
-
-  const expCO = await prisma.exploitation.upsert({
-    where: { id: 'exp-co-huila' },
-    update: {},
-    create: {
-      id: 'exp-co-huila',
-      countryId: colombia.id,
-      name: 'Finca Huila',
-      location: 'Département de Huila, Colombie',
-    },
-  });
-
-  // ─── Devices IoT ─────────────────────────────────────────────────────────────
-  await prisma.iotDevice.upsert({
-    where: { mqttTopic: 'bresil/entrepot1/mesures' },
-    update: {},
-    create: {
-      warehouseId: whBR.id,
-      mqttTopic: 'bresil/entrepot1/mesures',
-      firmwareVersion: '1.0.0',
-    },
+    create: { ...c.exploitation, countryId: country.id },
   });
 
   await prisma.iotDevice.upsert({
-    where: { mqttTopic: 'equateur/entrepot1/mesures' },
+    where: { mqttTopic: c.device.mqttTopic },
     update: {},
-    create: {
-      warehouseId: whEC.id,
-      mqttTopic: 'equateur/entrepot1/mesures',
-      firmwareVersion: '1.0.0',
-    },
+    create: { warehouseId: warehouse.id, mqttTopic: c.device.mqttTopic, firmwareVersion: '1.0.0' },
   });
 
-  await prisma.iotDevice.upsert({
-    where: { mqttTopic: 'colombie/entrepot1/mesures' },
-    update: {},
-    create: {
-      warehouseId: whCO.id,
-      mqttTopic: 'colombie/entrepot1/mesures',
-      firmwareVersion: '1.0.0',
-    },
-  });
-
-  // ─── Lots d'exemple ──────────────────────────────────────────────────────────
   await prisma.lot.createMany({
     skipDuplicates: true,
-    data: [
-      { id: 'lot-br-001', warehouseId: whBR.id, exploitationId: expBR.id, weightKg: 500, storedAt: new Date('2026-01-15') },
-      { id: 'lot-br-002', warehouseId: whBR.id, exploitationId: expBR.id, weightKg: 320, storedAt: new Date('2026-03-10') },
-      { id: 'lot-ec-001', warehouseId: whEC.id, exploitationId: expEC.id, weightKg: 410, storedAt: new Date('2026-02-20') },
-      { id: 'lot-co-001', warehouseId: whCO.id, exploitationId: expCO.id, weightKg: 275, storedAt: new Date('2026-04-05') },
-    ],
+    data: c.lots.map((lot) => ({
+      id: lot.id,
+      warehouseId: warehouse.id,
+      exploitationId: exploitation.id,
+      weightKg: lot.weightKg,
+      storedAt: new Date(lot.storedAt),
+    })),
   });
+}
+
+async function main() {
+  const targets = seedCountry
+    ? countries.filter((c) => c.code === seedCountry)
+    : countries;
+
+  if (seedCountry && targets.length === 0) {
+    throw new Error(`Unknown SEED_COUNTRY "${seedCountry}", expected one of BR, EC, CO`);
+  }
+
+  for (const c of targets) {
+    await seedCountryData(c);
+  }
 
   console.log('Seed OK');
 }

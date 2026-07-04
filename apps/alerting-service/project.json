@@ -1,7 +1,7 @@
 {
-  "name": "gateway",
+  "name": "alerting-service",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/gateway/src",
+  "sourceRoot": "apps/alerting-service/src",
   "projectType": "application",
   "tags": [],
   "targets": {
@@ -10,7 +10,7 @@
       "options": {
         "command": "webpack-cli build",
         "args": ["--node-env=production"],
-        "cwd": "apps/gateway"
+        "cwd": "apps/alerting-service"
       },
       "configurations": {
         "development": {
@@ -23,8 +23,8 @@
       "cache": true,
       "executor": "@nx/js:prune-lockfile",
       "outputs": [
-        "{workspaceRoot}/dist/apps/gateway/package.json",
-        "{workspaceRoot}/dist/apps/gateway/package-lock.json"
+        "{workspaceRoot}/dist/apps/alerting-service/package.json",
+        "{workspaceRoot}/dist/apps/alerting-service/package-lock.json"
       ],
       "options": {
         "buildTarget": "build"
@@ -33,7 +33,9 @@
     "copy-workspace-modules": {
       "dependsOn": ["build"],
       "cache": true,
-      "outputs": ["{workspaceRoot}/dist/apps/gateway/workspace_modules"],
+      "outputs": [
+        "{workspaceRoot}/dist/apps/alerting-service/workspace_modules"
+      ],
       "executor": "@nx/js:copy-workspace-modules",
       "options": {
         "buildTarget": "build"
@@ -49,23 +51,21 @@
       "defaultConfiguration": "development",
       "dependsOn": ["build"],
       "options": {
-        "buildTarget": "gateway:build",
+        "buildTarget": "alerting-service:build",
         "runBuildTargetDependencies": false
       },
       "configurations": {
         "development": {
-          "buildTarget": "gateway:build:development"
+          "buildTarget": "alerting-service:build:development"
         },
         "production": {
-          "buildTarget": "gateway:build:production"
+          "buildTarget": "alerting-service:build:production"
         }
       }
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/apps/gateway"],
       "options": {
-        "jestConfig": "apps/gateway/jest.config.cts"
+        "passWithNoTests": true
       }
     },
     "docker:build": {}

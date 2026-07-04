@@ -1,101 +1,98 @@
-# MyWorkspace
+# FutureKawa
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Suivi multi-pays des stocks de café vert (Brésil, Équateur, Colombie) : traçabilité des lots, surveillance IoT (température/humidité) via MQTT, et alerting automatique par e-mail. Projet réalisé dans le cadre de la MSPR TPRE814.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Architecture
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/nest?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+Un backend conteneurisé par pays (BDD, broker MQTT, API REST, alerting), et un backend central qui agrège les 3 pays pour le frontend. Chaque pays est isolé des autres : base de données, broker MQTT, `country-api` et `alerting-service` dédiés, sans partage de données au niveau du stockage. Le `gateway` est le seul composant qui connaît les 3 pays.
 
-## Run tasks
+Schéma détaillé et flux complet : voir [docs/technique.md](docs/technique.md#41-architecture-globale).
 
-To run the dev server for your app, use:
+## Stack
 
-```sh
-npx nx serve gateway
-```
+- **Backend** : NestJS (TypeScript), Prisma 7 (PostgreSQL), MQTT (Eclipse Mosquitto)
+- **Frontend** : Next.js
+- **IoT** : ESP8266/ESP32 + capteur DHT11, PlatformIO
+- **Monorepo** : Nx
+- **Infra** : Docker Compose
 
-To create a production bundle:
+## Démarrage rapide
 
-```sh
-npx nx build gateway
-```
-
-To see all available targets to run for a project, run:
+Prérequis : Docker.
 
 ```sh
-npx nx show project gateway
+git clone https://github.com/itsarnaud/FutureKawa && cd FutureKawa
+npm start
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+Ce script (`scripts/start.sh`) fait tout en une commande : crée `.env` depuis `.env.exemple` si besoin, build et démarre toute la stack (3 `country-api` + 3 `alerting-service`, une par pays, chacune avec sa base et son broker MQTT, le `gateway`, et Mailpit), attend que les 3 bases soient prêtes, pousse le schéma Prisma et injecte les données de démo pour chaque pays, puis affiche les URLs de tous les services.
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
+Pour tout arrêter :
 
 ```sh
-npx nx g @nx/nest:app demo
+docker compose down
 ```
 
-To generate a new library, use:
+Pour repartir d'une base propre (pousser le schéma / re-seed manuellement sur un pays donné) :
 
 ```sh
-npx nx g @nx/node:lib mylib
+DATABASE_URL="postgresql://postgres:<password>@localhost:5433/mydb?schema=public" npx prisma db push
+DATABASE_URL="postgresql://postgres:<password>@localhost:5433/mydb?schema=public" SEED_COUNTRY=BR npx prisma db seed
+# répéter avec le port 5434/SEED_COUNTRY=EC et 5435/SEED_COUNTRY=CO
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+| Service | URL |
+|---|---|
+| Gateway (API centrale) | http://localhost:3010/api |
+| country-api Brésil | http://localhost:3000/api |
+| country-api Équateur | http://localhost:3002/api |
+| country-api Colombie | http://localhost:3003/api |
+| Mailpit (e-mails d'alerte) | http://localhost:8025 |
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Structure du dépôt
 
-## Set up CI!
+```
+apps/
+  country-api/     # API REST par pays : lots, entrepôts, ingestion des mesures IoT (MQTT)
+  alerting-service/ # Microservice par pays : seuils température/humidité, lots périmés, e-mail
+  gateway/         # API centrale : agrège les 3 country-api pour le frontend
+  fe/              # Frontend Next.js
+libs/
+  db/              # PrismaService/PrismaModule partagés
+prisma/
+  schema.prisma    # Modèle de données (Lot, Warehouse, Exploitation, IotDevice, Alert...)
+  seed.ts          # Données de démo (SEED_COUNTRY=BR|EC|CO pour cibler un seul pays)
+IOT/
+  futurekawa-iot-esp32/  # Firmware capteur (PlatformIO)
+  broker/          # Config Mosquitto
+docker-compose.yml # Orchestration complète (BDD, brokers, APIs, gateway, mailpit)
+scripts/
+  start.sh         # Démarrage one-command (build, migrations, seed, récap des URLs)
+```
 
-### Step 1
+## Frontend
 
-To connect to Nx Cloud, run the following command:
+> À compléter par le développeur frontend.
+
+- Comment lancer `apps/fe` en local (commande, port)
+- Variables d'environnement nécessaires (ex. `NEXT_PUBLIC_API_URL`, à pointer vers le gateway `http://localhost:3010/api`)
+- Build et déploiement (Docker ou non)
+
+## Commandes utiles
 
 ```sh
-npx nx connect
+npx nx serve country-api      # lancer country-api en local (hors Docker)
+npx nx serve gateway           # lancer gateway en local (hors Docker)
+npx nx test <projet>           # tests unitaires d'un projet
+npx nx lint <projet>           # lint
 ```
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
+## Convention MQTT
 
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Chaque capteur publie sur `{pays}/{entrepot}/mesures` (ex. `bresil/entrepot1/mesures`) au format :
 
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+```json
+{ "temperature": 29.4, "humidite": 56.1, "timestamp": "2026-07-03T10:00:00Z" }
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/nx-api/nest?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+En interne, après avoir persisté une mesure, `country-api` publie sur `internal/reading-recorded` (même broker) pour déclencher la vérification de seuil côté `alerting-service`.

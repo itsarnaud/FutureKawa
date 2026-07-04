@@ -2,7 +2,10 @@
   "name": "@fe/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start": "./scripts/start.sh",
+    "test": "nx run-many -t test"
+  },
   "private": true,
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -48,6 +51,7 @@
     "@nestjs/testing": "^11.0.0",
     "@next/eslint-plugin-next": "^16.0.1",
     "@nx/devkit": "22.5.0",
+    "@nx/docker": "22.5.0",
     "@nx/eslint": "22.5.0",
     "@nx/eslint-plugin": "22.5.0",
     "@nx/jest": "22.5.0",
