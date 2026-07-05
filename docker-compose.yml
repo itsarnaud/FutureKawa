@@ -280,7 +280,7 @@ services:
       context: .
       dockerfile: apps/fe/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: https://turbo-giggle-xv4q5rp9xpg39q76-3010.app.github.dev/api
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     restart: unless-stopped
     ports:
       - '3001:3000'
