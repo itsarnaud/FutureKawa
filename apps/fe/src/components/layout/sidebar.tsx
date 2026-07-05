@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ComponentType } from "react";
 import {
   LayoutDashboard,
@@ -15,6 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 import { APP_NAME, SIDEBAR_LINKS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
+import { useAuthStore } from "@/stores/auth.store";
 
 const ICONS: Record<string, ComponentType<{ className?: string }>> = {
   LayoutDashboard,
@@ -26,6 +28,14 @@ const ICONS: Record<string, ComponentType<{ className?: string }>> = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  const handleLogout = () => {
+    auth.logout();
+    clearAuth();
+    router.push("/auth/login");
+  };
 
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r bg-background">
@@ -70,6 +80,7 @@ export function Sidebar() {
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground"
           size="sm"
+          onClick={handleLogout}
         >
           <LogOut className="size-4" />
           Déconnexion

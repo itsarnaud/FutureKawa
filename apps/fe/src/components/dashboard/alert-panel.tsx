@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { Alert, AlertType } from "@/types/domain";
 import { ALERT_TYPE_LABELS } from "@/lib/constants";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   AlertOctagon,
   AlertTriangle,
@@ -15,12 +16,14 @@ import {
   Bell,
   Mail,
   MailCheck,
+  BadgeCheck,
 } from "lucide-react";
 
 interface AlertPanelProps {
   alerts: Alert[];
   contextLabel?: string;
   listHeightClassName?: string;
+  onResolve?: (alert: Alert) => Promise<unknown> | void;
 }
 
 const HIGH_SEVERITY: AlertType[] = ["lot_perime", "temperature_haute", "temperature_basse"];
@@ -44,7 +47,28 @@ function iconOf(type: AlertType) {
   }
 }
 
-export function AlertPanel({ alerts, contextLabel, listHeightClassName = "h-[350px]" }: AlertPanelProps) {
+export function AlertPanel({
+  alerts,
+  contextLabel,
+  listHeightClassName = "h-[350px]",
+  onResolve,
+}: AlertPanelProps) {
+  const [resolvingIds, setResolvingIds] = useState<Set<string>>(new Set());
+
+  const handleResolve = async (alert: Alert) => {
+    if (!onResolve) return;
+    setResolvingIds((prev) => new Set(prev).add(alert.id));
+    try {
+      await onResolve(alert);
+    } finally {
+      setResolvingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(alert.id);
+        return next;
+      });
+    }
+  };
+
   return (
     <Card className="h-full border-border">
       <CardHeader className="flex flex-row items-center justify-between pb-3 space-y-0">
@@ -88,7 +112,9 @@ export function AlertPanel({ alerts, contextLabel, listHeightClassName = "h-[350
                 <div
                   key={alert.id}
                   className={`p-3 rounded-lg border text-xs flex gap-3 transition-colors ${
-                    severity === "high"
+                    alert.resolved
+                      ? "bg-muted/20 border-border/60 opacity-70"
+                      : severity === "high"
                       ? "bg-rose-50/50 border-rose-200/60 dark:bg-rose-950/10 dark:border-rose-900/30"
                       : "bg-amber-50/50 border-amber-200/60 dark:bg-amber-950/10 dark:border-amber-900/30"
                   }`}
@@ -137,6 +163,29 @@ export function AlertPanel({ alerts, contextLabel, listHeightClassName = "h-[350
                           </>
                         )}
                       </span>
+                    </div>
+                    <div className="pt-1.5 flex items-center justify-between border-t border-border/40 mt-1.5 pt-1.5">
+                      {alert.resolved ? (
+                        <span className="text-[10px] flex items-center gap-1 text-emerald-600 font-medium">
+                          <BadgeCheck className="size-3" />
+                          Traitée
+                          {alert.resolvedAt &&
+                            ` le ${new Date(alert.resolvedAt).toLocaleDateString("fr-FR")}`}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">Non traitée</span>
+                      )}
+                      {onResolve && !alert.resolved && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 px-2 text-[10px]"
+                          disabled={resolvingIds.has(alert.id)}
+                          onClick={() => handleResolve(alert)}
+                        >
+                          {resolvingIds.has(alert.id) ? "..." : "Marquer comme traitée"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

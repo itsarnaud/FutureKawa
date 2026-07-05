@@ -29,6 +29,7 @@ export interface Country {
 export interface WarehouseRef {
   id: string;
   name: string;
+  country?: { code: CountryCode; name: string };
 }
 
 export interface ExploitationRef {
@@ -82,7 +83,25 @@ export interface Alert {
   type: AlertType;
   message: string;
   sent: boolean;
+  resolved: boolean;
+  resolvedAt: string | null;
   triggeredAt: string;
   warehouse: WarehouseRef;
   lot?: { id: string; storedAt: string } | null;
+}
+
+export interface LotAlertSummary {
+  id: string;
+  type: AlertType;
+  message: string;
+  sent: boolean;
+  resolved: boolean;
+  triggeredAt: string;
+}
+
+// Returned by GET /lots/:id — a richer view than the list item above.
+export interface LotDetail extends Omit<Lot, "warehouse" | "exploitation"> {
+  warehouse: Warehouse;
+  exploitation: ExploitationRef & { location: string | null };
+  alerts: LotAlertSummary[];
 }

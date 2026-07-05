@@ -1,12 +1,52 @@
+"use client";
+
+import { Suspense, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { APP_NAME } from "@/lib/constants";
+import { auth } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/error";
+import { useAuthStore } from "@/stores/auth.store";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const setUser = useAuthStore((s) => s.setUser);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const user = await auth.login(email, password);
+      setUser(user);
+      router.push(searchParams.get("callbackUrl") ?? "/dashboard");
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card className="border shadow-md">
       <CardHeader className="text-center space-y-2">
@@ -18,35 +58,54 @@ export default function LoginPage() {
           Connectez-vous à votre espace {APP_NAME}.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Adresse e-mail</Label>
-          <Input id="email" type="email" placeholder="nom@exemple.com" required />
-        </div>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Mot de passe</Label>
-            <Link href="#" className="text-xs text-muted-foreground hover:underline">
-              Mot de passe oublié ?
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Adresse e-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="nom@exemple.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Link href="#" className="text-xs text-muted-foreground hover:underline">
+                Mot de passe oublié ?
+              </Link>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <Button type="submit" className="w-full mt-2" disabled={loading}>
+            {loading ? "Connexion..." : "Se connecter"}
+          </Button>
+
+          <div className="text-center text-xs text-muted-foreground mt-2">
+            Vous n&apos;avez pas de compte ?{" "}
+            <Link href="/auth/register" className="text-primary hover:underline font-semibold">
+              Créer un compte
             </Link>
           </div>
-          <Input id="password" type="password" required />
-        </div>
-
-        <Button className="w-full mt-2" asChild>
-          <Link href="/dashboard" className="flex justify-center">
-            Se connecter
-          </Link>
-        </Button>
-
-        <div className="text-center text-xs text-muted-foreground mt-2">
-          Vous n&apos;avez pas de compte ?{" "}
-          <Link href="/auth/register" className="text-primary hover:underline font-semibold">
-            Créer un compte
-          </Link>
-        </div>
-      </CardContent>
+        </CardContent>
+      </form>
     </Card>
   );
 }

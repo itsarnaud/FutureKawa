@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { Lot, LotStatus } from "@/types/domain";
 import { LOT_STATUS_LABELS, QUALITY_GRADE_LABELS } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ function daysSince(dateStr: string) {
 }
 
 export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<LotStatus | "all">("all");
   const [sortField, setSortField] = useState<SortField>("storedAt");
@@ -251,9 +253,18 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
             ) : (
               sortedLots.map((lot) => {
                 const age = daysSince(lot.storedAt);
+                const countryCode = lot.warehouse.country?.code;
                 return (
-                  <tr key={lot.id} className="hover:bg-muted/10 transition-colors group">
-                    <td className="p-3.5 pl-4 font-mono text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                  <tr
+                    key={lot.id}
+                    onClick={() =>
+                      countryCode && router.push(`/dashboard/lots/${lot.id}?country=${countryCode}`)
+                    }
+                    className={`hover:bg-muted/10 transition-colors group ${
+                      countryCode ? "cursor-pointer" : ""
+                    }`}
+                  >
+                    <td className="p-3.5 pl-4 font-mono text-xs text-muted-foreground group-hover:text-foreground group-hover:underline transition-colors">
                       {lot.id.slice(0, 8)}
                     </td>
                     <td className="p-3.5 font-medium">{lot.warehouse.name}</td>

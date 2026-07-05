@@ -7,10 +7,6 @@ import {
 } from "@/lib/constants";
 
 export function middleware(request: NextRequest) {
-  // Temporary bypass: backend is not ready yet. Disable auth guard.
-  return NextResponse.next();
-
-  /*
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 
@@ -32,7 +28,6 @@ export function middleware(request: NextRequest) {
   }
 
   return NextResponse.next();
-  */
 }
 
 export const config = {
