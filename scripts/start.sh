@@ -46,6 +46,7 @@ cat <<EOF
 
 ==> FutureKawa is up.
 
+  Frontend                    http://localhost:3001
   Gateway (API centrale)      http://localhost:${GATEWAY_PORT}/api
   country-api Brésil          http://localhost:3000/api
   country-api Équateur        http://localhost:3002/api

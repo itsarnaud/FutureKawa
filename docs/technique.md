@@ -70,13 +70,22 @@ Le frontend, de son côté, interroge exclusivement le `gateway`, qui route la r
 
 ### Architecture frontend
 
-> À compléter pour le frontend.
+Next.js (App Router), organisé par domaine sous `apps/fe/src` :
 
-- Structure de l'application (pages, composants principaux, gestion d'état)
-- Sélection d'un pays ou d'une exploitation, et son impact sur les appels au gateway
-- Affichage des lots triés par date de stockage
-- Consultation d'un lot et de ses courbes de température et d'humidité
-- Accès aux informations d'alerte et aux statuts
+- `types/domain.ts` : types miroirs des réponses du gateway (`Country`, `Warehouse`, `Lot`, `SensorReading`, `Alert`).
+- `lib/gateway.ts` : client typé au-dessus d'un wrapper `fetch` (`lib/api.ts`) — un point d'entrée par ressource (`getLots`, `getWarehouses`, `getWarehouse`, `getWarehouseReadings`, `getAlerts`).
+- `hooks/use-*.ts` : un hook par ressource (`useLots`, `useWarehouses`, `useWarehouse`, `useWarehouseReadings`, `useAlerts`), tous bâtis sur un helper interne partagé (`hooks/internal/use-async-resource.ts`) qui gère chargement/erreur/polling. Pas de librairie de fetching (react-query, swr) : le monorepo n'en a pas, ce pattern reste volontairement simple.
+- `components/dashboard/` : composants de présentation purs (`LotsTable`, `AlertPanel`, `IoTCharts`) qui ne font aucun appel réseau — ils reçoivent leurs données en props depuis les pages.
+
+**Sélection d'un pays.** Chaque page (`/dashboard`, `/dashboard/lots`, `/dashboard/entrepots`, `/dashboard/alertes`) expose un sélecteur "Tous pays / BR / EC / CO". Sans pays sélectionné, le gateway est appelé sans `?country`, ce qui déclenche son agrégation des 3 `country-api` ; avec un pays précis, le paramètre est transmis tel quel. Les endpoints `/warehouses/:id` et `/warehouses/:id/readings` exigent un pays (contrainte du gateway) : en mode "Tous pays", les courbes IoT et les KPI température/humidité affichent un état vide explicite plutôt que d'agréger des seuils incompatibles entre pays.
+
+**Lots triés (FIFO).** `country-api` renvoie déjà les lots triés par `storedAt` croissant ; `LotsTable` reprend ce tri par défaut côté client (avec bascule asc/desc) et un indicateur visuel rappelant la règle FIFO.
+
+**Détail d'un entrepôt.** `/dashboard/entrepots/[id]` combine `useWarehouse` (métadonnées + seuils du pays), `useWarehouseReadings` (courbes température/humidité via `IoTCharts`) et `useLots({ warehouseId })` (`LotsTable` filtrée à cet entrepôt).
+
+**Alertes.** `/dashboard/alertes` filtre par pays et par statut d'envoi (`sent`), et réutilise `AlertPanel` (utilisé aussi dans le tableau de bord principal) pour l'affichage.
+
+**Déploiement.** Voir la section [Frontend](../README.md#frontend) du README pour la variable d'environnement `NEXT_PUBLIC_API_URL` et le Dockerfile.
 
 ### Justification des choix technologiques
 

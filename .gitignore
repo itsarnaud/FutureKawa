@@ -62,3 +62,5 @@ out
 
 # Mosquitto broker runtime data
 IOT/broker/data/
+
+IOT/broker/data/*

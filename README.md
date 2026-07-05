@@ -43,6 +43,7 @@ DATABASE_URL="postgresql://postgres:<password>@localhost:5433/mydb?schema=public
 
 | Service | URL |
 |---|---|
+| Frontend | http://localhost:3001 |
 | Gateway (API centrale) | http://localhost:3010/api |
 | country-api Brésil | http://localhost:3000/api |
 | country-api Équateur | http://localhost:3002/api |
@@ -65,18 +66,24 @@ prisma/
 IOT/
   futurekawa-iot-esp32/  # Firmware capteur (PlatformIO)
   broker/          # Config Mosquitto
-docker-compose.yml # Orchestration complète (BDD, brokers, APIs, gateway, mailpit)
+docker-compose.yml # Orchestration complète (BDD, brokers, APIs, gateway, frontend, mailpit)
 scripts/
   start.sh         # Démarrage one-command (build, migrations, seed, récap des URLs)
 ```
 
 ## Frontend
 
-> À compléter par le développeur frontend.
+Le frontend (`apps/fe`, Next.js App Router) ne parle qu'au `gateway` — jamais directement à un `country-api`. Il est inclus dans `docker-compose.yml` (service `fe`, port `3001`) et démarre avec le reste de la stack via `npm start` / `docker compose up`.
 
-- Comment lancer `apps/fe` en local (commande, port)
-- Variables d'environnement nécessaires (ex. `NEXT_PUBLIC_API_URL`, à pointer vers le gateway `http://localhost:3010/api`)
-- Build et déploiement (Docker ou non)
+**En local, hors Docker :**
+
+```sh
+NEXT_PUBLIC_API_URL=http://localhost:3010/api npx nx run fe:dev --port 4200
+```
+
+**Variable d'environnement :** `NEXT_PUBLIC_API_URL` — l'URL du `gateway`, telle que le *navigateur* doit pouvoir la joindre. C'est une variable `NEXT_PUBLIC_*` : elle est injectée dans le bundle client au moment du **build**, pas au démarrage du conteneur. Sur une installation Docker classique en local, la valeur par défaut de `.env.exemple` (`http://localhost:3010/api`, le port du gateway mappé sur l'hôte) convient.
+
+**Build Docker :** `apps/fe/Dockerfile` (multi-stage, `next.config.js` en `output: "standalone"` pour une image minimale) prend `NEXT_PUBLIC_API_URL` en `build arg`, lu depuis `.env` par `docker-compose.yml`. Rebuild nécessaire si cette valeur change (`docker compose build fe`).
 
 ## Commandes utiles
 
