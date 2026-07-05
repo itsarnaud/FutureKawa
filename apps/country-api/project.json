@@ -50,6 +50,14 @@
         "jestConfig": "apps/country-api/jest.config.ts"
       }
     },
+    "test-e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/country-api-e2e"],
+      "options": {
+        "jestConfig": "apps/country-api/jest.e2e.config.ts",
+        "runInBand": true
+      }
+    },
     "serve": {
       "continuous": true,
       "executor": "@nx/js:node",
