@@ -234,7 +234,7 @@ Chaque capteur est enregistré en base et rattaché à un entrepôt. Chaque mesu
 
 ### Préparation à l'automatisation
 
-Le système est aujourd'hui limité à la remontée de mesures, sans pilotage d'actionneurs. Le schéma de principe pour une évolution future (chauffage, humidificateur, aérateur) fait l'objet d'un document dédié, couvrant le fonctionnement nominal, le fonctionnement dégradé et les sécurités associées.
+Le système est aujourd'hui limité à la remontée de mesures, sans pilotage d'actionneurs. Le schéma de principe pour une évolution future (chauffage, humidificateur, aérateur) fait l'objet d'un document dédié — [`docs/phase2-automatisation.md`](./phase2-automatisation.md) — couvrant le fonctionnement nominal, le fonctionnement dégradé et les sécurités associées. Le cadrage de cette phase avec le client s'appuierait sur [`docs/questionnaire-cadrage-phase2.md`](./questionnaire-cadrage-phase2.md).
 
 ## 4.3 Plans de tests détaillés
 
@@ -242,11 +242,11 @@ Le système est aujourd'hui limité à la remontée de mesures, sans pilotage d'
 
 | Niveau | Outil | Approche |
 |---|---|---|
-| Unitaire | Jest | Services et contrôleurs de `country-api`, `alerting-service` et `gateway`. La logique métier (calcul de seuils, agrégation multi-pays, gestion des lots) est testée avec Prisma et MQTT simulés. |
-| Intégration | Jest et Docker | Vérification que chaque module fonctionne correctement avec Prisma et MQTT réels, via les conteneurs. |
-| API | curl | Vérification systématique du comportement HTTP réel à chaque évolution de l'architecture. |
-| End-to-end | Simulation MQTT | La chaîne complète, du capteur à l'e-mail d'alerte, est vérifiée en simulant un message MQTT identique à celui du firmware, sans dépendre du matériel physique. |
-| UI | À compléter | Stratégie de tests frontend à documenter par le développeur concerné (voir section dédiée ci-dessous). |
+| Unitaire | Jest | Services et contrôleurs de `country-api`, `alerting-service` et `gateway`. La logique métier (calcul de seuils, agrégation multi-pays, gestion des lots) est testée avec Prisma et MQTT simulés. Commande : `npx nx run-many -t test`. |
+| Intégration / API | Jest + Supertest + Postgres réel | `apps/country-api/src/app/lots/lots.e2e-spec.ts` démarre un vrai serveur HTTP Nest adossé à une vraie base Postgres et vérifie, via de vraies requêtes HTTP, le tri FIFO, la garde de clé API interne (401/200) et la création/lecture d'un lot. Commande : `npx nx test-e2e country-api` (nécessite `DATABASE_URL` vers une base disponible). |
+| API (exploratoire) | curl / Swagger | Vérification manuelle du comportement HTTP réel à chaque évolution de l'architecture ; documentation interactive disponible sur `/api/docs` (gateway et country-api). |
+| End-to-end | Simulation MQTT | La chaîne complète, du capteur à l'e-mail d'alerte, est vérifiée en simulant un message MQTT identique à celui du firmware (`node IOT/simulate-sensors.js`), sans dépendre du matériel physique. |
+| UI | Jest + Testing Library, Playwright | Composants (`apps/fe/specs/dashboard.spec.tsx`) et parcours e2e navigateur (`apps/fe/specs/dashboard.e2e.spec.ts`). Voir section dédiée ci-dessous. |
 
 La priorité a été donnée aux tests unitaires, exécutés à chaque changement via une commande unique, et à une vérification API et end-to-end ciblée sur les points sensibles de l'architecture : le cloisonnement des données par pays et la chaîne complète depuis la mesure IoT jusqu'à l'alerte.
 
@@ -270,6 +270,23 @@ Cette commande exécute l'ensemble des tests unitaires backend (`country-api`, `
 | 8 | Tolérance à une panne partielle | Un `country-api` arrêté volontairement | `curl http://localhost:3010/api/lots` | Réponse HTTP 200 contenant les données des pays disponibles |
 
 Ces huit cas de test ont été exécutés et validés sur l'environnement de démonstration.
+
+### Intégration continue (CI/CD)
+
+Un `Jenkinsfile` à la racine du dépôt définit un pipeline en cinq étapes : installation des
+dépendances, lint (`nx run-many -t lint`), tests unitaires (`nx run-many -t test`), build
+(`nx run-many -t build`), tests d'intégration `country-api` (démarrage d'un Postgres jetable, `prisma
+db push` + `db seed`, puis `nx test-e2e country-api`), et enfin packaging des images Docker
+(`docker compose build`). Toute étape en échec arrête le pipeline.
+
+**État de validation.** Chaque commande du pipeline a été exécutée et validée manuellement dans
+l'environnement de développement (lint sans erreur, 23 tests unitaires + 7 tests d'intégration
+passants, build des 4 apps réussi, images Docker construites avec succès). Le pipeline n'a en revanche
+pas été exécuté de bout en bout sur un serveur Jenkins réel : le monter aurait nécessité de désactiver
+des protections de sécurité (CSRF) et de monter le socket Docker de l'hôte dans un conteneur jetable —
+une décision explicitement écartée pour ce projet plutôt que prise silencieusement. Pour obtenir une
+preuve d'exécution complète, pointer une instance Jenkins existante (avec Node.js 20+, npm et Docker
+disponibles sur l'agent) sur ce dépôt et créer un job Pipeline utilisant ce `Jenkinsfile`.
 
 ### Gestion des anomalies
 

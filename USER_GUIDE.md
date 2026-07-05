@@ -5,10 +5,21 @@ Bienvenue dans le guide utilisateur de la **Vue Siège FutureKawa**. Cette inter
 ---
 
 ## Table des Matières
+0. [Connexion et création de compte](#0-connexion-et-cr%C3%A9ation-de-compte)
 1. [Supervision Multi-Sites (Sélecteur de Pays)](#1-supervision-multi-sites-s%C3%A9lecteur-de-pays)
 2. [Gestion Logistique FIFO (Rotation des Stocks)](#2-gestion-logistique-fifo-rotation-des-stocks)
 3. [Suivi des Capteurs IoT (Température & Humidité)](#3-suivi-des-capteurs-iot-temp%C3%A9rature--humidit%C3%A9)
 4. [Panneau des Alertes et Résolution des Anomalies](#4-panneau-des-alertes-et-r%C3%A9solution-des-anomalies)
+
+---
+
+## 0. Connexion et création de compte
+
+L'accès au tableau de bord nécessite un compte. Depuis la page d'accueil, cliquez sur **Créer un
+compte** (nom, e-mail, mot de passe d'au moins 8 caractères), ou **Se connecter** si vous en avez déjà
+un. Une fois connecté, la session reste active pendant 2 heures ; passé ce délai, vous êtes redirigé
+vers la page de connexion. Le bouton **Déconnexion** en bas de la barre latérale met fin à la session
+immédiatement.
 
 ---
 
@@ -21,8 +32,8 @@ La Vue Siège intègre un **sélecteur de contexte global** situé en haut à dr
 | Pays | Température Cible | Tolérance Temp. | Humidité Cible | Tolérance Hum. |
 | :--- | :---: | :---: | :---: | :---: |
 | **Brésil** 🇧🇷 | 29°C | ±3°C (26°C - 32°C) | 55% | ±2% (53% - 57%) |
-| **Colombie** 🇨🇴 | 27°C | ±3°C (24°C - 30°C) | 60% | ±2% (58% - 62%) |
-| **Équateur** 🇪🇨 | 28°C | ±3°C (25°C - 31°C) | 58% | ±2% (56% - 60%) |
+| **Équateur** 🇪🇨 | 31°C | ±3°C (28°C - 34°C) | 60% | ±2% (58% - 62%) |
+| **Colombie** 🇨🇴 | 26°C | ±3°C (23°C - 29°C) | 80% | ±2% (78% - 82%) |
 
 ---
 
@@ -41,6 +52,9 @@ Pour préserver les qualités organoleptiques du café vert, FutureKawa applique
 - 🟢 **Conforme** : Le lot respecte les seuils IoT de son site de stockage et sa date d'entrée est inférieure à 365 jours.
 - 🟠 **Alerte** : Le lot a été exposé à des conditions hors-seuils (ex: température trop élevée ou humidité excessive).
 - 🔴 **Périmé (>365j)** : Le lot est stocké depuis plus d'un an. **Action Requise** : Sortir ce lot immédiatement pour éviter la dégradation des grains.
+
+### Détail d'un lot
+Cliquez sur une ligne de la table pour ouvrir la fiche détaillée du lot : poids, exploitation d'origine, courbes de température/humidité **depuis sa date de stockage** (et non depuis le début du suivi de l'entrepôt), ainsi que l'historique des alertes propres à ce lot.
 
 ---
 
@@ -73,3 +87,6 @@ Le panneau **Alertes Actives** consolide toutes les anomalies en cours sur le si
 ### Actions Recommandées en cas d'Alerte :
 1. **Alerte Périmé** : Planifiez une torréfaction immédiate du lot concerné ou contactez l'entrepôt pour un contrôle qualité visuel.
 2. **Alerte Dérive IoT** : Contactez le technicien de maintenance du site concerné pour vérifier le système de climatisation ou de déshumidification du hangar.
+
+### Statut de traitement
+Chaque alerte affiche également si l'e-mail correspondant a été **envoyé** ou est **en attente**, indépendamment de son statut de traitement métier : **Traitée** ou **Non traitée**. Une fois l'action corrective effectuée, cliquez sur **Marquer comme traitée** sur l'alerte concernée pour l'acquitter — elle reste visible dans l'historique mais n'apparaît plus dans le filtre « Non traitées » de la page Alertes.
