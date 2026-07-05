@@ -1,0 +1,458 @@
+<title>FutureKawa — Support de soutenance</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-raised: #fdfaf7;
+    --fg: #252525;
+    --muted: #6b6357;
+    --border: #ebebeb;
+    --primary: #532a0e;
+    --primary-contrast: #fdfaf7;
+    --accent-soft: rgba(83, 42, 14, 0.06);
+    --glow: rgba(83, 42, 14, 0.1);
+    --good: #3f7a4d;
+    --warn: #a9670f;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #1c1512;
+    --bg-raised: #251c17;
+    --fg: #f2ece4;
+    --muted: #b8ab9e;
+    --border: #3a2f27;
+    --primary: #dc9a54;
+    --primary-contrast: #241209;
+    --accent-soft: rgba(220, 154, 84, 0.1);
+    --glow: rgba(220, 154, 84, 0.16);
+    --good: #6fbf7e;
+    --warn: #dba24a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1512;
+      --bg-raised: #251c17;
+      --fg: #f2ece4;
+      --muted: #b8ab9e;
+      --border: #3a2f27;
+      --primary: #dc9a54;
+      --primary-contrast: #241209;
+      --accent-soft: rgba(220, 154, 84, 0.1);
+      --glow: rgba(220, 154, 84, 0.16);
+      --good: #6fbf7e;
+      --warn: #dba24a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    overflow: hidden;
+  }
+  ::selection { background: var(--glow); }
+
+  .deck {
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(1.5rem, 5vw, 5rem) clamp(1.5rem, 8vw, 8rem);
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: opacity 0.15s linear; transform: none; }
+  }
+
+  .eyebrow {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin: 0 0 0.75rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4.6vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.12;
+    margin: 0 0 1rem;
+    text-wrap: balance;
+    max-width: 22ch;
+  }
+
+  h2 {
+    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0 0 1.5rem;
+    text-wrap: balance;
+    max-width: 26ch;
+  }
+
+  .lede {
+    font-size: clamp(1rem, 1.3vw, 1.2rem);
+    color: var(--muted);
+    max-width: 62ch;
+    line-height: 1.55;
+    margin: 0 0 1.5rem;
+  }
+
+  .content-grid {
+    display: grid;
+    gap: 1rem;
+    max-width: 68rem;
+  }
+  .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 860px) {
+    .cols-2, .cols-3 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.4rem;
+    transition: box-shadow 0.2s ease;
+  }
+  .card:hover { box-shadow: 0 4px 12px var(--glow); }
+  .card h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+  }
+  .card p { margin: 0; color: var(--muted); font-size: 0.94rem; line-height: 1.5; }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--primary);
+    letter-spacing: 0.02em;
+  }
+  .pill.good { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
+  .pill.warn { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+
+  table { border-collapse: collapse; width: 100%; max-width: 68rem; }
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.92rem;
+  }
+  th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+
+  code, .code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--accent-soft);
+    color: var(--primary);
+    padding: 0.1em 0.4em;
+    border-radius: 6px;
+  }
+
+  .diagram {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+  .node {
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    white-space: nowrap;
+  }
+  .node.accent { border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  .arrow { color: var(--muted); font-size: 1.1rem; }
+
+  .brand {
+    position: fixed;
+    top: 1.4rem;
+    left: clamp(1.5rem, 8vw, 8rem);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 0.95rem;
+    z-index: 5;
+  }
+  .brand .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--primary);
+  }
+
+  .nav {
+    position: fixed;
+    bottom: 1.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    z-index: 5;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+  }
+  .nav button {
+    all: unset;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .nav button:hover { background: var(--accent-soft); color: var(--primary); }
+  .nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .nav .count {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.82rem;
+    color: var(--muted);
+    min-width: 3.4rem;
+    text-align: center;
+  }
+
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+    z-index: 6;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress { transition: none; }
+  }
+
+  ul.plain { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
+  ul.plain li { display: flex; gap: 0.6rem; align-items: baseline; color: var(--fg); font-size: 1rem; }
+  ul.plain li::before { content: "—"; color: var(--primary); flex-shrink: 0; }
+
+  .closing {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .closing .big { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 700; color: var(--primary); }
+</style>
+
+<div class="progress" id="progress"></div>
+<div class="brand"><span class="dot"></span> FutureKawa</div>
+
+<div class="deck" id="deck">
+
+  <section class="slide">
+    <p class="eyebrow">MSPR — Bloc 4 · RNCP35584</p>
+    <h1>FutureKawa</h1>
+    <p class="lede">Traçabilité et supervision IoT du café vert, du sac de l'exploitation à l'entrepôt d'exportation — sur trois pays producteurs, consolidée au siège.</p>
+    <p class="lede" style="font-size:0.95rem">Soutenance finale — Brésil · Équateur · Colombie</p>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Le problème</p>
+    <h2>Quatre angles morts dans la chaîne logistique</h2>
+    <div class="content-grid cols-2">
+      <div class="card"><h3>Conditions de stockage</h3><p>Température et humidité suivies à la main, sans centralisation entre les trois pays.</p></div>
+      <div class="card"><h3>FIFO non fiabilisé</h3><p>Rien ne garantit que les lots les plus anciens partent en premier vers les torréfacteurs.</p></div>
+      <div class="card"><h3>Traçabilité clients</h3><p>Aucune preuve exploitable de l'historique des conditions à fournir aux acheteurs B2B.</p></div>
+      <div class="card"><h3>Alertes manuelles</h3><p>Dépassements de seuil et péremption détectés au constat, jamais en amont.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Architecture</p>
+    <h2>Un backend par pays, un siège qui consolide</h2>
+    <div class="diagram" style="margin-bottom:1.2rem">
+      <div class="node">Capteur ESP8266</div>
+      <span class="arrow">→</span>
+      <div class="node">Broker MQTT</div>
+      <span class="arrow">→</span>
+      <div class="node accent">country-api</div>
+      <span class="arrow">→</span>
+      <div class="node">Postgres (pays)</div>
+    </div>
+    <div class="diagram" style="margin-bottom:1.6rem">
+      <div class="node">alerting-service</div>
+      <span class="arrow">→</span>
+      <div class="node">E-mail (Mailpit/SMTP)</div>
+    </div>
+    <p class="lede" style="margin-bottom:0.6rem">Le <strong style="color:var(--fg)">gateway</strong> interroge les trois <code>country-api</code> en parallèle, tolère la panne d'un pays, et n'applique aucune règle métier — il consomme des résultats déjà calculés côté pays.</p>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Stack technique</p>
+    <h2>Choix justifiés, pas par défaut</h2>
+    <div class="content-grid cols-3">
+      <div class="card"><h3>NestJS + Prisma</h3><p>Architecture modulaire par domaine (lots, entrepôts, alertes), migrations et client typé.</p></div>
+      <div class="card"><h3>Postgres × 4</h3><p>Une base par pays + une base siège dédiée aux comptes utilisateurs — aucun partage de données entre pays.</p></div>
+      <div class="card"><h3>Mosquitto (MQTT)</h3><p>Un broker par pays, topic <code>{pays}/{entrepot}/mesures</code>, payload JSON minimal.</p></div>
+      <div class="card"><h3>Next.js + Recharts</h3><p>Tableau de bord siège : sélection pays, lots triés FIFO, courbes température/humidité.</p></div>
+      <div class="card"><h3>Docker Compose</h3><p>17 services orchestrés — 3 pays complets + siège + frontend + mail, démarrage en une commande.</p></div>
+      <div class="card"><h3>GitHub Actions + Jenkins</h3><p>CI automatique sur chaque PR/fusion (lint → tests → build → intégration → packaging Docker) ; pipeline Jenkins équivalent tenu en parallèle.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Règles métier</p>
+    <h2>Ce que le système applique automatiquement</h2>
+    <table>
+      <thead><tr><th>Règle</th><th>Déclencheur</th><th>Effet</th></tr></thead>
+      <tbody>
+        <tr><td>FIFO</td><td>Tri permanent</td><td>Lots classés par date de stockage croissante</td></tr>
+        <tr><td>Conditions hors plage</td><td>Mesure hors ± tolérance pays</td><td>Alerte + e-mail au responsable d'exploitation</td></tr>
+        <tr><td>Lot périmé</td><td><span class="code">now() − stockage &gt; 365j</span></td><td>Statut <span class="code">perime</span> + alerte, vérifié chaque nuit</td></tr>
+      </tbody>
+    </table>
+    <p class="lede" style="margin-top:1.2rem">Seuils réels : Brésil 29 °C / 55 % · Équateur 31 °C / 60 % · Colombie 26 °C / 80 % — tolérance ±3 °C / ±2 % partout.</p>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Sécurité</p>
+    <h2>L'essentiel en place, le reste prêt à activer</h2>
+    <div class="content-grid cols-2">
+      <div class="card"><h3>Authentification JWT</h3><p>Inscription/connexion sur le siège, mot de passe haché (bcrypt), jeton porteur de 2h, toutes les routes métier protégées.</p></div>
+      <div class="card"><h3>Clé API interne &amp; rate limiting</h3><p>Implémentés (<code>apps/country-api/.../common</code>) mais désactivés pour l'instant : pas de déploiement en cours, priorité au confort de test.</p></div>
+      <div class="card"><h3>CORS ouvert (dev)</h3><p>Origine non restreinte pendant la phase de développement — le frontend et le gateway changent souvent de domaine (ports forwardés).</p></div>
+      <div class="card"><h3>Documentation OpenAPI</h3><p>Swagger généré et exposé sur <code>/api/docs</code>, gateway et country-api.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Démonstration</p>
+    <h2>Ce que l'on va montrer en direct</h2>
+    <ul class="plain" style="font-size:1.15rem">
+      <li>Connexion, puis liste des lots triée FIFO avec statut visible (conforme / alerte / périmé)</li>
+      <li>Détail d'un lot : courbes température/humidité depuis sa date de stockage</li>
+      <li>Publication d'une mesure hors seuil via le simulateur IoT → alerte visible en quelques secondes</li>
+      <li>Traitement de l'alerte (acquittement) et vérification de l'e-mail dans Mailpit</li>
+      <li>Vue consolidée <code>/dashboard/stocks</code> : stocks par pays et par entrepôt</li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Qualité</p>
+    <h2>Testé à plusieurs niveaux, pas juste au clic</h2>
+    <div class="content-grid cols-2">
+      <div class="card"><h3>Unitaire — Jest</h3><p>23 tests : FIFO, calcul de seuils, péremption, ingestion MQTT — Prisma simulé.</p></div>
+      <div class="card"><h3>Intégration — Supertest</h3><p>7 tests contre un vrai serveur HTTP et un vrai Postgres : garde de sécurité, création de lot, mesures.</p></div>
+      <div class="card"><h3>End-to-end</h3><p>Simulateur MQTT (<code>simulate-sensors.js</code>) rejouant la chaîne capteur → alerte → e-mail sans matériel.</p></div>
+      <div class="card"><h3>UI</h3><p>Composants (Testing Library) et parcours navigateur (Playwright) sur le tableau de bord.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Et après</p>
+    <h2>Phase 2 : de la mesure à la décision</h2>
+    <div class="diagram" style="margin-bottom:1.4rem">
+      <div class="node">Capteurs (existant)</div>
+      <span class="arrow">→</span>
+      <div class="node accent">Module de décision</div>
+      <span class="arrow">→</span>
+      <div class="node">Chauffage</div>
+      <div class="node">Humidificateur</div>
+      <div class="node">Aération</div>
+    </div>
+    <p class="lede">Cadrage documenté : seuils de sécurité distincts des seuils qualité, arrêt d'urgence logique et manuel, mode de repli manuel par entrepôt — questionnaire de cadrage client prêt pour l'entretien.</p>
+  </section>
+
+  <section class="slide">
+    <p class="eyebrow">Bilan</p>
+    <h2>Livrables</h2>
+    <div class="content-grid cols-2">
+      <div><span class="pill good">Livré</span><p style="margin:.5rem 0 1.1rem;color:var(--muted)">Backend pays conteneurisé, gateway + frontend, prototype IoT réel, alerting e-mail, dossier technique, guide utilisateur, schéma et questionnaire phase 2.</p></div>
+      <div><span class="pill good">Livré</span><p style="margin:.5rem 0 1.1rem;color:var(--muted)">CI GitHub Actions automatique (lint, tests, build, intégration, packaging Docker) sur chaque pull request et chaque fusion.</p></div>
+      <div><span class="pill warn">Assumé</span><p style="margin:.5rem 0 1.1rem;color:var(--muted)"><code>Jenkinsfile</code> écrit et chaque étape validée manuellement, en complément de la CI GitHub Actions ; exécution sur un serveur Jenkins dédié laissée à l'infrastructure de déploiement finale.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="closing">
+      <p class="eyebrow">Merci</p>
+      <div class="big">Questions ?</div>
+      <p class="lede">FutureKawa — Brésil · Équateur · Colombie · Siège</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" aria-label="Diapositive précédente">‹</button>
+  <span class="count" id="count">1 / 12</span>
+  <button id="next" aria-label="Diapositive suivante">›</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let i = 0;
+
+  function render() {
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    document.getElementById('count').textContent = (i + 1) + ' / ' + total;
+    document.getElementById('progress').style.transform = 'scaleX(' + ((i + 1) / total) + ')';
+  }
+
+  function go(delta) {
+    i = Math.min(total - 1, Math.max(0, i + delta));
+    render();
+  }
+
+  document.getElementById('prev').addEventListener('click', () => go(-1));
+  document.getElementById('next').addEventListener('click', () => go(1));
+
+  window.addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); go(1); }
+    if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+  });
+
+  let touchStartX = null;
+  window.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  window.addEventListener('touchend', (e) => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+    touchStartX = null;
+  });
+
+  render();
+</script>

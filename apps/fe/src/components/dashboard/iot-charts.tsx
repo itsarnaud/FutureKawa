@@ -169,7 +169,7 @@ export function IoTCharts({ country, readings }: IoTChartsProps) {
                             Temp: {val.toFixed(1)}°C
                           </p>
                           {isOutOfRange && (
-                            <p className="text-[10px] text-rose-500 font-medium">
+                            <p className="text-[10px] text-rose-700 dark:text-rose-500 font-medium">
                               {`Hors tolérance (${tempMin}-${tempMax}°C)`}
                             </p>
                           )}
@@ -275,7 +275,7 @@ export function IoTCharts({ country, readings }: IoTChartsProps) {
                             Humidité: {val.toFixed(1)}%
                           </p>
                           {isOutOfRange && (
-                            <p className="text-[10px] text-rose-500 font-medium">
+                            <p className="text-[10px] text-rose-700 dark:text-rose-500 font-medium">
                               {`Hors tolérance (${humMin}-${humMax}%)`}
                             </p>
                           )}

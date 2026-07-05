@@ -4,6 +4,10 @@ import { LotsTable } from "../src/components/dashboard/lots-table";
 import { AlertPanel } from "../src/components/dashboard/alert-panel";
 import type { Lot, Alert } from "../src/types/domain";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
 // Mock resize observer which is used by Recharts / ResponsiveContainer sometimes (though not directly rendering in these unit tests, good practice)
 /* eslint-disable @typescript-eslint/no-empty-function */
 class ResizeObserver {

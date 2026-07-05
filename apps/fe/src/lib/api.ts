@@ -38,6 +38,15 @@ async function request<T>(
       statusCode: res.status,
       message: res.statusText,
     }));
+
+    // Session expired or invalid — clear it and send the user back to login.
+    if (res.status === 401 && typeof document !== "undefined") {
+      document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0`;
+      if (!window.location.pathname.startsWith("/auth/")) {
+        window.location.href = `/auth/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+      }
+    }
+
     throw error;
   }
 

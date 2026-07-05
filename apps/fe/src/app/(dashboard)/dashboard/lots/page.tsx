@@ -28,7 +28,7 @@ export default function LotsPage() {
             <div className="p-1 rounded-md bg-[#532a0e] text-[#fdfaf7]">
               <Package className="size-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
               Lots
             </h1>
           </div>

@@ -68,7 +68,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="opacity-80">État Stock</span>
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">8 sacs restants</Badge>
+                  <Badge variant="outline" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">8 sacs restants</Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="opacity-80">Provenance</span>

@@ -63,9 +63,12 @@ La palette s'articule autour du grain de café et de ses dérivés, mariant des 
 ### Neutral
 - **Fond Papier** (#ffffff) : Couleur de fond des pages.
 - **Texte Expresso** (#252525) : Couleur de texte par défaut, offrant un contraste élevé sans la dureté du noir pur.
+- **Texte Secondaire** (`oklch(0.45 0 0)`, ≈ #737373) : couleur des textes secondaires/discrets (légendes, métadonnées, placeholders). Contraste ≥7:1 sur fond blanc — volontairement plus foncé que le gris par défaut de shadcn/ui (`oklch(0.556 0 0)`, ≈4.7:1, à peine conforme) pour rester lisible même sur les fonds teintés (badges, cartes `bg-muted/40`, etc.).
 - **Bordure Tasse** (#ebebeb) : Couleur de bordure standard des cartes et séparateurs.
 
 **The Contrast Rule.** Toute utilisation de la couleur primaire brune pour un arrière-plan interactif ou un badge doit obligatoirement être accompagnée de la couleur crème (#fdfaf7) pour le texte de premier plan. Le texte noir sur fond brun est strictement interdit.
+
+**La règle des teintes de statut.** Les couleurs sémantiques (emerald/amber/rose) utilisées comme **texte** doivent toujours être la nuance **700** (clair) ou **400** (sombre), jamais 500/600 : ces nuances intermédiaires tombent sous 4.5:1 sur les fonds clairs/teintés de l'application. La nuance 500/600 reste correcte pour les **icônes** et les **puces de couleur** (contrainte non-textuelle à 3:1).
 
 ## 3. Typography
 

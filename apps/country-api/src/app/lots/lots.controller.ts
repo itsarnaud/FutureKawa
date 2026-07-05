@@ -27,6 +27,11 @@ export class LotsController {
     return this.lotsService.findOne(id);
   }
 
+  @Get(':id/mesures')
+  findMeasures(@Param('id') id: string) {
+    return this.lotsService.findMeasures(id);
+  }
+
   @Post()
   create(@Body(new ValidationPipe()) dto: CreateLotDto) {
     return this.lotsService.create(dto);

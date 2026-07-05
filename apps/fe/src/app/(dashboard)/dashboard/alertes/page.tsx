@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import type { CountryCode } from "@/types/domain";
+import type { Alert as DomainAlert, CountryCode } from "@/types/domain";
 import { COUNTRY_META } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/error";
+import { gateway } from "@/lib/gateway";
 import { useAlerts } from "@/hooks/use-alerts";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,15 +15,25 @@ import { Bell } from "lucide-react";
 const COUNTRY_CODES: CountryCode[] = ["BR", "EC", "CO"];
 
 type SentFilter = "all" | "sent" | "pending";
+type TreatmentFilter = "all" | "resolved" | "pending";
 
 export default function AlertesPage() {
   const [countryFilter, setCountryFilter] = useState<CountryCode | "ALL">("ALL");
   const [sentFilter, setSentFilter] = useState<SentFilter>("all");
+  const [treatmentFilter, setTreatmentFilter] = useState<TreatmentFilter>("all");
 
   const { data: alerts, loading, error, refetch } = useAlerts({
     country: countryFilter === "ALL" ? undefined : countryFilter,
     sent: sentFilter === "all" ? undefined : sentFilter === "sent",
+    resolved: treatmentFilter === "all" ? undefined : treatmentFilter === "resolved",
   });
+
+  const handleResolve = async (alert: DomainAlert) => {
+    const country = alert.warehouse.country?.code;
+    if (!country) return;
+    await gateway.resolveAlert(alert.id, country);
+    refetch();
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -32,7 +43,7 @@ export default function AlertesPage() {
             <div className="p-1 rounded-md bg-[#532a0e] text-[#fdfaf7]">
               <Bell className="size-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
               Alertes
             </h1>
           </div>
@@ -58,7 +69,7 @@ export default function AlertesPage() {
           onClick={() => setSentFilter("all")}
           className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
             sentFilter === "all"
-              ? "bg-white text-[#532a0e] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+              ? "bg-white text-[#532a0e] dark:text-[#fdfaf7] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -68,8 +79,8 @@ export default function AlertesPage() {
           onClick={() => setSentFilter("sent")}
           className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
             sentFilter === "sent"
-              ? "bg-white text-emerald-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-              : "text-muted-foreground hover:text-emerald-600"
+              ? "bg-white text-emerald-700 dark:text-emerald-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+              : "text-muted-foreground hover:text-emerald-700"
           }`}
         >
           Envoyées
@@ -78,12 +89,48 @@ export default function AlertesPage() {
           onClick={() => setSentFilter("pending")}
           className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
             sentFilter === "pending"
-              ? "bg-white text-amber-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-              : "text-muted-foreground hover:text-amber-600"
+              ? "bg-white text-amber-700 dark:text-amber-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+              : "text-muted-foreground hover:text-amber-700"
           }`}
         >
           En attente
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">Traitement :</span>
+        <div className="flex flex-wrap items-center gap-1.5 bg-muted/40 p-1 rounded-lg border border-border/60 w-fit">
+          <button
+            onClick={() => setTreatmentFilter("all")}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              treatmentFilter === "all"
+                ? "bg-white text-[#532a0e] dark:text-[#fdfaf7] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Toutes
+          </button>
+          <button
+            onClick={() => setTreatmentFilter("pending")}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              treatmentFilter === "pending"
+                ? "bg-white text-rose-700 dark:text-rose-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-rose-700"
+            }`}
+          >
+            Non traitées
+          </button>
+          <button
+            onClick={() => setTreatmentFilter("resolved")}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              treatmentFilter === "resolved"
+                ? "bg-white text-emerald-700 dark:text-emerald-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-emerald-700"
+            }`}
+          >
+            Traitées
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -105,6 +152,7 @@ export default function AlertesPage() {
           alerts={alerts ?? []}
           contextLabel={countryFilter === "ALL" ? undefined : COUNTRY_META[countryFilter].short}
           listHeightClassName="h-[65vh]"
+          onResolve={handleResolve}
         />
       )}
     </div>

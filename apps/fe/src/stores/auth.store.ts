@@ -30,7 +30,8 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "fk-auth",
       storage: createJSONStorage(() => sessionStorage),
-      // Only persist user info, not sensitive tokens (those live in httpOnly cookies)
+      // Only persist user info here — the JWT itself lives in its own cookie
+      // (see lib/auth.ts), read directly by lib/api.ts and by middleware.ts.
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,

@@ -3,6 +3,7 @@ import type {
   Alert,
   CountryCode,
   Lot,
+  LotDetail,
   LotStatus,
   SensorReading,
   Warehouse,
@@ -27,6 +28,7 @@ export interface AlertsFilter {
   country?: CountryCode;
   warehouseId?: string;
   sent?: boolean;
+  resolved?: boolean;
 }
 
 export interface ReadingsFilter {
@@ -53,9 +55,25 @@ export const gateway = {
     return api.get<Lot[]>(`/lots${buildQuery({ ...filter })}`);
   },
 
+  getLot(id: string, country: CountryCode) {
+    return api.get<LotDetail>(`/lots/${id}${buildQuery({ country })}`);
+  },
+
+  getLotMeasures(id: string, country: CountryCode) {
+    return api.get<SensorReading[]>(`/lots/${id}/mesures${buildQuery({ country })}`);
+  },
+
   getAlerts(filter: AlertsFilter = {}) {
     return api.get<Alert[]>(
-      `/alerts${buildQuery({ ...filter, sent: filter.sent === undefined ? undefined : String(filter.sent) })}`
+      `/alerts${buildQuery({
+        ...filter,
+        sent: filter.sent === undefined ? undefined : String(filter.sent),
+        resolved: filter.resolved === undefined ? undefined : String(filter.resolved),
+      })}`
     );
+  },
+
+  resolveAlert(id: string, country: CountryCode) {
+    return api.patch<Alert>(`/alerts/${id}/resolve${buildQuery({ country })}`);
   },
 };

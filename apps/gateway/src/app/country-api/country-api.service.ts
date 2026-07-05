@@ -42,6 +42,20 @@ export class CountryApiService {
     }
   }
 
+  async patch<T>(country: CountryCode, path: string, body: unknown = {}): Promise<T> {
+    const baseUrl = this.urls[country];
+    try {
+      const { data } = await firstValueFrom(
+        this.http.patch<T>(`${baseUrl}/api/${path}`, body),
+      );
+      return data;
+    } catch (err) {
+      const axiosErr = err as AxiosError;
+      this.logger.error(`[${country}] country-api call failed: PATCH ${path} — ${axiosErr.message}`);
+      throw new ServiceUnavailableException(`Country API unavailable for ${country}`);
+    }
+  }
+
   async getAll<T>(path: string): Promise<T[]> {
     const results = await Promise.allSettled(
       (Object.keys(COUNTRY_ENV) as CountryCode[]).map(code => this.get<T[]>(code, path)),

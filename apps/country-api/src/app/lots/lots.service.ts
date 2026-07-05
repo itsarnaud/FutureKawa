@@ -16,7 +16,9 @@ export class LotsService {
       },
       orderBy: { storedAt: 'asc' },
       include: {
-        warehouse: { select: { id: true, name: true } },
+        warehouse: {
+          select: { id: true, name: true, country: { select: { code: true, name: true } } },
+        },
         exploitation: { select: { id: true, name: true } },
       },
     });
@@ -26,7 +28,7 @@ export class LotsService {
     const lot = await this.prisma.lot.findUnique({
       where: { id },
       include: {
-        warehouse: true,
+        warehouse: { include: { country: true } },
         exploitation: true,
         alerts: { orderBy: { triggeredAt: 'desc' }, take: 10 },
       },
@@ -52,6 +54,19 @@ export class LotsService {
     return this.prisma.lot.update({
       where: { id },
       data: { status: dto.status },
+    });
+  }
+
+  async findMeasures(id: string) {
+    const lot = await this.findOne(id);
+
+    return this.prisma.sensorReading.findMany({
+      where: {
+        device: { warehouseId: lot.warehouseId },
+        recordedAt: { gte: lot.storedAt },
+      },
+      orderBy: { recordedAt: 'asc' },
+      include: { device: { select: { id: true, mqttTopic: true } } },
     });
   }
 }

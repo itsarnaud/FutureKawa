@@ -74,8 +74,12 @@ Next.js (App Router), organisé par domaine sous `apps/fe/src` :
 
 - `types/domain.ts` : types miroirs des réponses du gateway (`Country`, `Warehouse`, `Lot`, `SensorReading`, `Alert`).
 - `lib/gateway.ts` : client typé au-dessus d'un wrapper `fetch` (`lib/api.ts`) — un point d'entrée par ressource (`getLots`, `getWarehouses`, `getWarehouse`, `getWarehouseReadings`, `getAlerts`).
-- `hooks/use-*.ts` : un hook par ressource (`useLots`, `useWarehouses`, `useWarehouse`, `useWarehouseReadings`, `useAlerts`), tous bâtis sur un helper interne partagé (`hooks/internal/use-async-resource.ts`) qui gère chargement/erreur/polling. Pas de librairie de fetching (react-query, swr) : le monorepo n'en a pas, ce pattern reste volontairement simple.
+- `hooks/use-*.ts` : un hook par ressource (`useLots`, `useWarehouses`, `useWarehouse`, `useWarehouseReadings`, `useAlerts`), tous bâtis sur un helper interne partagé (`hooks/internal/use-async-resource.ts`) qui gère chargement/erreur et rafraîchit automatiquement toutes les 30 secondes (`POLLING_INTERVAL_MS`, `lib/constants.ts`). Pas de librairie de fetching (react-query, swr) : le monorepo n'en a pas, ce pattern reste volontairement simple.
 - `components/dashboard/` : composants de présentation purs (`LotsTable`, `AlertPanel`, `IoTCharts`) qui ne font aucun appel réseau — ils reçoivent leurs données en props depuis les pages.
+- `app/(marketing)`, `app/(auth)`, `app/(dashboard)` : groupes de routes Next.js, chacun avec son propre `layout.tsx` (navbar/footer publics, carte de connexion centrée, sidebar applicative), pour éviter toute fuite de mise en page entre les trois univers. Le layout `(auth)` affiche un lien « Retour à l'accueil » au-dessus du formulaire, seul moyen de sortir du flux de connexion/inscription sans le soumettre.
+- `components/ui/` : primitives shadcn/ui (bouton, carte, badge, onglet, champ de saisie, alerte) et Tailwind CSS, mutualisées entre tous les écrans ; les courbes de `IoTCharts` sont réalisées avec Recharts.
+
+**Authentification.** Un jeton JWT est déposé dans un cookie à la connexion (`lib/auth.ts`). Le middleware Next.js (`src/middleware.ts`) intercepte chaque navigation : il redirige vers `/auth/login` tout accès à une route protégée (`/dashboard/*`) sans cookie valide, et inversement redirige un utilisateur déjà authentifié qui accèderait à `/auth/*`. Les informations d'affichage de l'utilisateur (nom, session) sont conservées côté client dans un store Zustand persisté (`stores/auth.store.ts`, `sessionStorage`), volontairement séparé du jeton lui-même pour ne pas dupliquer une information sensible à deux endroits.
 
 **Sélection d'un pays.** Chaque page (`/dashboard`, `/dashboard/lots`, `/dashboard/entrepots`, `/dashboard/alertes`) expose un sélecteur "Tous pays / BR / EC / CO". Sans pays sélectionné, le gateway est appelé sans `?country`, ce qui déclenche son agrégation des 3 `country-api` ; avec un pays précis, le paramètre est transmis tel quel. Les endpoints `/warehouses/:id` et `/warehouses/:id/readings` exigent un pays (contrainte du gateway) : en mode "Tous pays", les courbes IoT et les KPI température/humidité affichent un état vide explicite plutôt que d'agréger des seuils incompatibles entre pays.
 
@@ -234,7 +238,7 @@ Chaque capteur est enregistré en base et rattaché à un entrepôt. Chaque mesu
 
 ### Préparation à l'automatisation
 
-Le système est aujourd'hui limité à la remontée de mesures, sans pilotage d'actionneurs. Le schéma de principe pour une évolution future (chauffage, humidificateur, aérateur) fait l'objet d'un document dédié, couvrant le fonctionnement nominal, le fonctionnement dégradé et les sécurités associées.
+Le système est aujourd'hui limité à la remontée de mesures, sans pilotage d'actionneurs. Le schéma de principe pour une évolution future (chauffage, humidificateur, aérateur) fait l'objet d'un document dédié — [`docs/phase2-automatisation.md`](./phase2-automatisation.md) — couvrant le fonctionnement nominal, le fonctionnement dégradé et les sécurités associées. Le cadrage de cette phase avec le client s'appuierait sur [`docs/questionnaire-cadrage-phase2.md`](./questionnaire-cadrage-phase2.md).
 
 ## 4.3 Plans de tests détaillés
 
@@ -242,11 +246,11 @@ Le système est aujourd'hui limité à la remontée de mesures, sans pilotage d'
 
 | Niveau | Outil | Approche |
 |---|---|---|
-| Unitaire | Jest | Services et contrôleurs de `country-api`, `alerting-service` et `gateway`. La logique métier (calcul de seuils, agrégation multi-pays, gestion des lots) est testée avec Prisma et MQTT simulés. |
-| Intégration | Jest et Docker | Vérification que chaque module fonctionne correctement avec Prisma et MQTT réels, via les conteneurs. |
-| API | curl | Vérification systématique du comportement HTTP réel à chaque évolution de l'architecture. |
-| End-to-end | Simulation MQTT | La chaîne complète, du capteur à l'e-mail d'alerte, est vérifiée en simulant un message MQTT identique à celui du firmware, sans dépendre du matériel physique. |
-| UI | À compléter | Stratégie de tests frontend à documenter par le développeur concerné (voir section dédiée ci-dessous). |
+| Unitaire | Jest | Services et contrôleurs de `country-api`, `alerting-service` et `gateway`. La logique métier (calcul de seuils, agrégation multi-pays, gestion des lots) est testée avec Prisma et MQTT simulés. Commande : `npx nx run-many -t test`. |
+| Intégration / API | Jest + Supertest + Postgres réel | `apps/country-api/src/app/lots/lots.e2e-spec.ts` démarre un vrai serveur HTTP Nest adossé à une vraie base Postgres et vérifie, via de vraies requêtes HTTP, le tri FIFO, la garde de clé API interne (401/200) et la création/lecture d'un lot. Commande : `npx nx test-e2e country-api` (nécessite `DATABASE_URL` vers une base disponible). |
+| API (exploratoire) | curl / Swagger | Vérification manuelle du comportement HTTP réel à chaque évolution de l'architecture ; documentation interactive disponible sur `/api/docs` (gateway et country-api). |
+| End-to-end | Simulation MQTT | La chaîne complète, du capteur à l'e-mail d'alerte, est vérifiée en simulant un message MQTT identique à celui du firmware (`node IOT/simulate-sensors.js`), sans dépendre du matériel physique. |
+| UI | Jest + Testing Library, Playwright | Composants (`apps/fe/specs/dashboard.spec.tsx`) et parcours e2e navigateur (`apps/fe/specs/dashboard.e2e.spec.ts`). Voir section dédiée ci-dessous. |
 
 La priorité a été donnée aux tests unitaires, exécutés à chaque changement via une commande unique, et à une vérification API et end-to-end ciblée sur les points sensibles de l'architecture : le cloisonnement des données par pays et la chaîne complète depuis la mesure IoT jusqu'à l'alerte.
 
@@ -271,6 +275,44 @@ Cette commande exécute l'ensemble des tests unitaires backend (`country-api`, `
 
 Ces huit cas de test ont été exécutés et validés sur l'environnement de démonstration.
 
+### Intégration continue (CI/CD)
+
+Deux définitions de pipeline coexistent, avec les mêmes étapes (install → lint → tests unitaires →
+build → tests d'intégration → packaging Docker) :
+
+- **GitHub Actions** (`.github/workflows/ci.yml`) : c'est ce pipeline qui s'exécute réellement à chaque
+  pull request et à chaque push sur `main`/`develop` — cinq jobs (`lint`, `test`, `build`, `integration`,
+  `docker`), le job `integration` démarrant un service Postgres éphémère fourni par GitHub.
+- **Jenkins** (`Jenkinsfile` à la racine) : même séquence sous forme de stages Jenkins Pipeline, pensée
+  pour un agent disposant de Node.js 20+, npm et Docker.
+
+**État de validation.** Chaque commande des deux pipelines a été exécutée et validée manuellement dans
+l'environnement de développement (lint sans erreur, 23 tests unitaires country-api + 9 alerting-service
++ 8 gateway + 5 fe, 7 tests d'intégration passants, build des 4 apps réussi, images Docker construites
+avec succès). Le `Jenkinsfile` n'a en revanche pas été exécuté de bout en bout sur un serveur Jenkins réel :
+le monter aurait nécessité de désactiver des protections de sécurité (CSRF) et de monter le socket Docker
+de l'hôte dans un conteneur jetable — une décision explicitement écartée pour ce projet plutôt que prise
+silencieusement. Pour obtenir une preuve d'exécution complète, pointer une instance Jenkins existante sur
+ce dépôt et créer un job Pipeline utilisant ce `Jenkinsfile`.
+
+**Deux anomalies de pipeline détectées et corrigées :**
+
+- *Client Prisma non généré avant les tests.* `country-api` et `alerting-service` importent les types et
+  enums générés par `@prisma/client` (`AlertType`, `LotStatus`, `QualityGrade`...), y compris dans leurs
+  tests unitaires. Aucun job de `ci.yml` (`lint`, `test`, `build`) ni l'étape d'installation du
+  `Jenkinsfile` n'exécutait `prisma generate` avant `npm run` / `nx run-many`, ce qui faisait échouer les
+  deux suites (`Cannot find module '.prisma/client/default'`, puis `has no exported member 'AlertType'`).
+  Corrigé en ajoutant `npx prisma generate --schema=prisma/schema.prisma` juste après `npm ci` dans les
+  trois jobs concernés de `ci.yml` et dans le stage `Install dependencies` du `Jenkinsfile` — à l'image de
+  ce que font déjà les `Dockerfile` de `country-api`, `alerting-service` et `gateway`.
+- *Récursion infinie sur `nx run-many -t test`.* Le `package.json` racine du monorepo est nommé
+  `@fe/source` et expose un script `test` valant `nx run-many -t test`. Nx transforme automatiquement les
+  scripts npm de la racine en cible d'un projet inféré du même nom : `nx run-many -t test` déclenchait donc
+  sa propre cible `@fe/source:test`, qui relançait `nx run-many -t test`, etc. — d'où un job de test
+  anormalement long, avec le même bloc de résultats répété des dizaines de fois dans les logs. Corrigé en
+  ajoutant `"nx": { "includedScripts": [] }` au `package.json` racine, qui exclut explicitement ses scripts
+  npm de l'inférence de projets Nx (option documentée précisément pour ce cas).
+
 ### Gestion des anomalies
 
 Le traitement d'une anomalie suit systématiquement trois étapes :
@@ -281,8 +323,21 @@ Le traitement d'une anomalie suit systématiquement trois étapes :
 
 ### Stratégie de tests frontend
 
-> À compléter pour le frontend.
+| Niveau | Outil | Approche |
+|---|---|---|
+| Composants | Jest + Testing Library | `apps/fe/specs/dashboard.spec.tsx` (`LotsTable`, `AlertPanel`) et `apps/fe/specs/index.spec.tsx` (page d'accueil) : rendu et comportement vérifiés à partir de props mockées, indépendamment de toute API réelle. Commande : `npx nx test fe`. |
+| End-to-end (navigateur) | Playwright | `apps/fe/specs/dashboard.e2e.spec.ts`, exécuté dans un vrai navigateur (Chromium) contre le `gateway` et les données de démonstration réellement déployées (stack complète démarrée via `npm start`). Commande : `npx nx e2e fe`. |
 
-- Outil et méthode de test utilisés (unitaire, composants, end-to-end)
-- Cas de test principaux : sélection de pays, affichage et tri des lots, consultation des courbes, affichage des alertes
-- Critères de réussite associés
+**Cas de test principaux**
+
+| # | Cas de test | Type | Critère de réussite |
+|---|---|---|---|
+| 1 | Rendu du tableau des lots | Composant | Les entrepôts des trois lots passés en props s'affichent dans le tableau |
+| 2 | Filtrage par statut | Composant | Un clic sur le filtre « Périmé » ne laisse visible que le lot périmé |
+| 3 | Panneau d'alertes actives | Composant | Les messages des deux alertes mockées s'affichent |
+| 4 | Panneau d'alertes vide | Composant | Sans alerte, le message « Tout est conforme » s'affiche avec le pays de contexte dans le texte |
+| 5 | Tableau de bord et KPI | End-to-end | `/dashboard` affiche le titre « FutureKawa — Vue Siège » et les 4 cartes d'indicateurs (température, humidité, lots stockés, qualité & anomalies) |
+| 6 | Changement de contexte pays | End-to-end | Basculer sur l'onglet Brésil puis Colombie rafraîchit le tableau des lots affiché |
+| 7 | Tri FIFO par défaut | End-to-end | Le bandeau « Règle FIFO active » est visible, et un clic sur l'en-tête de colonne « Stocké depuis » inverse l'ordre d'affichage |
+
+Ces sept cas ont été exécutés et validés (`npx nx test fe` ; `npx nx e2e fe` avec la stack complète démarrée).

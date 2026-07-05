@@ -78,6 +78,21 @@ services:
     networks:
       - futurekawa-network
 
+  postgres-siege:
+    image: postgres:17-alpine
+    container_name: postgres-siege
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '${POSTGRES_PORT_SIEGE}:5432'
+    volumes:
+      - postgres_data_siege:/var/lib/postgresql/data
+    networks:
+      - futurekawa-network
+
   mailpit:
     image: axllent/mailpit:latest
     container_name: mailpit
@@ -248,12 +263,15 @@ services:
       ECUADOR_API_URL: http://country-api-equateur:3000
       COLOMBIA_API_URL: http://country-api-colombie:3000
       GATEWAY_PORT: 3010
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-siege:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - '${GATEWAY_PORT}:3010'
     depends_on:
       - country-api-bresil
       - country-api-equateur
       - country-api-colombie
+      - postgres-siege
     networks:
       - futurekawa-network
 
@@ -262,8 +280,7 @@ services:
       context: .
       dockerfile: apps/fe/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3010/api}
-    container_name: fe
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     restart: unless-stopped
     ports:
       - '3001:3000'
@@ -276,6 +293,7 @@ volumes:
   postgres_data_bresil:
   postgres_data_equateur:
   postgres_data_colombie:
+  postgres_data_siege:
   redis_data:
 
 networks:

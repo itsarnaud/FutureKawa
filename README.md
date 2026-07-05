@@ -4,7 +4,7 @@ Suivi multi-pays des stocks de café vert (Brésil, Équateur, Colombie) : traç
 
 ## Architecture
 
-Un backend conteneurisé par pays (BDD, broker MQTT, API REST, alerting), et un backend central qui agrège les 3 pays pour le frontend. Chaque pays est isolé des autres : base de données, broker MQTT, `country-api` et `alerting-service` dédiés, sans partage de données au niveau du stockage. Le `gateway` est le seul composant qui connaît les 3 pays.
+Un backend conteneurisé par pays (BDD, broker MQTT, API REST, alerting), et un backend central qui agrège les 3 pays pour le frontend. Chaque pays est isolé des autres : base de données, broker MQTT, `country-api` et `alerting-service` dédiés, sans partage de données au niveau du stockage. Le `gateway` est le seul composant qui connaît les 3 pays ; il a sa propre base (`postgres-siege`) pour les comptes utilisateurs, indépendante des données métier des pays.
 
 Schéma détaillé et flux complet : voir [docs/technique.md](docs/technique.md#41-architecture-globale).
 
@@ -44,11 +44,14 @@ DATABASE_URL="postgresql://postgres:<password>@localhost:5433/mydb?schema=public
 | Service | URL |
 |---|---|
 | Frontend | http://localhost:3001 |
-| Gateway (API centrale) | http://localhost:3010/api |
-| country-api Brésil | http://localhost:3000/api |
+| Gateway (API centrale) | http://localhost:3010/api — doc interactive sur `/api/docs` |
+| country-api Brésil | http://localhost:3000/api — doc interactive sur `/api/docs` |
 | country-api Équateur | http://localhost:3002/api |
 | country-api Colombie | http://localhost:3003/api |
 | Mailpit (e-mails d'alerte) | http://localhost:8025 |
+
+Un compte est nécessaire pour utiliser le frontend : créez-en un depuis `/auth/register`, ou directement
+via l'API (`POST /api/auth/register` sur le gateway).
 
 ## Structure du dépôt
 
@@ -69,6 +72,12 @@ IOT/
 docker-compose.yml # Orchestration complète (BDD, brokers, APIs, gateway, frontend, mailpit)
 scripts/
   start.sh         # Démarrage one-command (build, migrations, seed, récap des URLs)
+docs/
+  technique.md                       # Dossier technique (architecture, IoT, tests, CI/CD)
+  phase2-automatisation.md           # Schéma de principe : pilotage d'actionneurs (phase 2)
+  questionnaire-cadrage-phase2.md    # Questions à poser au client avant la phase 2
+  support-soutenance.html            # Support de présentation
+Jenkinsfile        # Pipeline CI/CD (lint, tests, build, intégration, packaging Docker)
 ```
 
 ## Frontend
@@ -88,11 +97,32 @@ NEXT_PUBLIC_API_URL=http://localhost:3010/api npx nx run fe:dev --port 4200
 ## Commandes utiles
 
 ```sh
-npx nx serve country-api      # lancer country-api en local (hors Docker)
-npx nx serve gateway           # lancer gateway en local (hors Docker)
-npx nx test <projet>           # tests unitaires d'un projet
-npx nx lint <projet>           # lint
+npx nx serve country-api          # lancer country-api en local (hors Docker)
+npx nx serve gateway               # lancer gateway en local (hors Docker)
+npx nx test <projet>                # tests unitaires d'un projet
+npx nx test-e2e country-api        # tests d'intégration API (contre un vrai Postgres, voir DATABASE_URL)
+npx nx lint <projet>                # lint
+node IOT/simulate-sensors.js       # simule des capteurs IoT sans matériel (voir --help dans le fichier)
 ```
+
+## Sécurité
+
+- **Authentification** : JWT (voir `apps/gateway/src/app/auth`). Le frontend appelle `/api/auth/register`
+  et `/api/auth/login` sur le gateway ; toutes les autres routes métier du gateway exigent un jeton
+  `Authorization: Bearer`.
+- **CORS grand ouvert pour l'instant** : le projet n'est pas encore déployé, et le frontend/gateway se
+  retrouvent régulièrement sur des domaines différents en dev (ports forwardés Codespaces, etc.).
+  `apps/gateway/src/main.ts` accepte donc n'importe quelle origine — à restreindre avant tout déploiement
+  réel.
+- **Cloisonnement pays/siège, clé API interne et limitation de débit** : implémentés
+  (`apps/country-api/src/app/common/`) mais volontairement **désactivés** pour la même raison (confort de
+  test, pas de déploiement en cours) — voir le commentaire dans `apps/country-api/src/app/app.module.ts`
+  pour les réactiver.
+
+## CI/CD
+
+Un [`Jenkinsfile`](Jenkinsfile) définit le pipeline (install → lint → tests unitaires → build → tests
+d'intégration → packaging Docker). Voir [docs/technique.md](docs/technique.md) pour l'état de validation.
 
 ## Convention MQTT
 

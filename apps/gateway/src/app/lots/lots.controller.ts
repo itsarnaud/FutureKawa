@@ -1,6 +1,8 @@
-import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { CountryApiService } from '../country-api/country-api.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('lots')
 export class LotsController {
   constructor(private readonly countryApi: CountryApiService) {}
@@ -22,5 +24,17 @@ export class LotsController {
     }
 
     return this.countryApi.getAll(path);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string, @Query('country') country: string) {
+    if (!this.countryApi.isValidCountry(country)) throw new BadRequestException(`Invalid country code: ${country}`);
+    return this.countryApi.get(country, `lots/${id}`);
+  }
+
+  @Get(':id/mesures')
+  findMeasures(@Param('id') id: string, @Query('country') country: string) {
+    if (!this.countryApi.isValidCountry(country)) throw new BadRequestException(`Invalid country code: ${country}`);
+    return this.countryApi.get(country, `lots/${id}/mesures`);
   }
 }

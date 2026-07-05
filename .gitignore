@@ -2,7 +2,10 @@
 
 #
 .env
-.github
+# Keep GitHub Actions workflows tracked; everything else under .github/
+# (agent/tooling config) stays local-only.
+.github/*
+!.github/workflows
 .vscode
 # compiled output
 dist
