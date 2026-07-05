@@ -43,7 +43,7 @@ export default function AlertesPage() {
             <div className="p-1 rounded-md bg-[#532a0e] text-[#fdfaf7]">
               <Bell className="size-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
               Alertes
             </h1>
           </div>
@@ -69,7 +69,7 @@ export default function AlertesPage() {
           onClick={() => setSentFilter("all")}
           className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
             sentFilter === "all"
-              ? "bg-white text-[#532a0e] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+              ? "bg-white text-[#532a0e] dark:text-[#fdfaf7] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -79,8 +79,8 @@ export default function AlertesPage() {
           onClick={() => setSentFilter("sent")}
           className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
             sentFilter === "sent"
-              ? "bg-white text-emerald-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-              : "text-muted-foreground hover:text-emerald-600"
+              ? "bg-white text-emerald-700 dark:text-emerald-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+              : "text-muted-foreground hover:text-emerald-700"
           }`}
         >
           Envoyées
@@ -89,8 +89,8 @@ export default function AlertesPage() {
           onClick={() => setSentFilter("pending")}
           className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
             sentFilter === "pending"
-              ? "bg-white text-amber-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-              : "text-muted-foreground hover:text-amber-600"
+              ? "bg-white text-amber-700 dark:text-amber-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+              : "text-muted-foreground hover:text-amber-700"
           }`}
         >
           En attente
@@ -104,7 +104,7 @@ export default function AlertesPage() {
             onClick={() => setTreatmentFilter("all")}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
               treatmentFilter === "all"
-                ? "bg-white text-[#532a0e] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                ? "bg-white text-[#532a0e] dark:text-[#fdfaf7] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -114,8 +114,8 @@ export default function AlertesPage() {
             onClick={() => setTreatmentFilter("pending")}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
               treatmentFilter === "pending"
-                ? "bg-white text-rose-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-                : "text-muted-foreground hover:text-rose-600"
+                ? "bg-white text-rose-700 dark:text-rose-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-rose-700"
             }`}
           >
             Non traitées
@@ -124,8 +124,8 @@ export default function AlertesPage() {
             onClick={() => setTreatmentFilter("resolved")}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
               treatmentFilter === "resolved"
-                ? "bg-white text-emerald-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-                : "text-muted-foreground hover:text-emerald-600"
+                ? "bg-white text-emerald-700 dark:text-emerald-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-emerald-700"
             }`}
           >
             Traitées

@@ -71,7 +71,7 @@ export default function WarehouseDetailPage() {
         ) : warehouse ? (
           <div className="flex items-center gap-2">
             <span className="text-lg">{COUNTRY_META[warehouse.country.code]?.flag}</span>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
               {warehouse.name}
             </h1>
           </div>

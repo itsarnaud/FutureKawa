@@ -102,7 +102,7 @@ export default function DashboardPage() {
             <div className="p-1 rounded-md bg-[#532a0e] text-[#fdfaf7]">
               <Coffee className="size-5" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
               FutureKawa — Vue Siège
             </h1>
           </div>
@@ -163,8 +163,8 @@ export default function DashboardPage() {
             <span
               className={`p-1 rounded-full ${
                 kpis.tempDrift
-                  ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20"
-                  : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20"
+                  ? "bg-rose-50 text-rose-600"
+                  : "bg-emerald-50 text-emerald-600"
               }`}
             >
               <Thermometer className="size-4" />
@@ -177,11 +177,11 @@ export default function DashboardPage() {
               </span>
               {kpis.latest && (
                 kpis.tempDrift ? (
-                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 text-[10px] py-0">
+                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] py-0">
                     Dérive
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 text-[10px] py-0">
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] py-0">
                     Cible
                   </Badge>
                 )
@@ -209,8 +209,8 @@ export default function DashboardPage() {
             <span
               className={`p-1 rounded-full ${
                 kpis.humDrift
-                  ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20"
-                  : "bg-blue-50 text-blue-600 dark:bg-blue-950/20"
+                  ? "bg-rose-50 text-rose-600"
+                  : "bg-blue-50 text-blue-600"
               }`}
             >
               <Droplets className="size-4" />
@@ -223,11 +223,11 @@ export default function DashboardPage() {
               </span>
               {kpis.latest && (
                 kpis.humDrift ? (
-                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 text-[10px] py-0">
+                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] py-0">
                     Dérive
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 text-[10px] py-0">
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] py-0">
                     Cible
                   </Badge>
                 )
@@ -252,7 +252,7 @@ export default function DashboardPage() {
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Lots de Café stockés
             </CardTitle>
-            <span className="p-1 rounded-full bg-zinc-50 text-zinc-600 dark:bg-zinc-800">
+            <span className="p-1 rounded-full bg-zinc-50 text-zinc-600">
               <Package className="size-4" />
             </span>
           </CardHeader>
@@ -264,16 +264,16 @@ export default function DashboardPage() {
               <span className="text-xs text-muted-foreground">unités</span>
             </div>
             <div className="text-[10px] flex items-center gap-1.5 mt-2">
-              <span className="flex items-center gap-0.5 text-emerald-600">
+              <span className="flex items-center gap-0.5 text-emerald-700">
                 ● {kpis.conforme} conforme
               </span>
               {kpis.alerte > 0 && (
-                <span className="flex items-center gap-0.5 text-amber-600">
+                <span className="flex items-center gap-0.5 text-amber-700">
                   ● {kpis.alerte} alerte
                 </span>
               )}
               {kpis.perime > 0 && (
-                <span className="flex items-center gap-0.5 text-rose-600 font-semibold">
+                <span className="flex items-center gap-0.5 text-rose-700 font-semibold">
                   ● {kpis.perime} périmé
                 </span>
               )}
@@ -290,8 +290,8 @@ export default function DashboardPage() {
             <span
               className={`p-1 rounded-full ${
                 kpis.activeAlerts > 0
-                  ? "bg-rose-50 text-rose-600 dark:bg-rose-950/20"
-                  : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20"
+                  ? "bg-rose-50 text-rose-600"
+                  : "bg-emerald-50 text-emerald-600"
               }`}
             >
               <AlertTriangle className="size-4" />
@@ -301,7 +301,11 @@ export default function DashboardPage() {
             <div className="flex items-baseline gap-1.5">
               <span
                 className={`text-3xl font-bold tracking-tight ${
-                  kpis.perime > 0 ? "text-rose-600" : kpis.activeAlerts > 0 ? "text-amber-600" : "text-zinc-900 dark:text-zinc-50"
+                  kpis.perime > 0
+                    ? "text-rose-700"
+                    : kpis.activeAlerts > 0
+                    ? "text-amber-700"
+                    : "text-zinc-900"
                 }`}
               >
                 {alertsLoading ? "…" : kpis.activeAlerts}

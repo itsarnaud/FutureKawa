@@ -16,6 +16,13 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
+  # package-lock.json was written with npm 11. npm 10 (bundled with Node 20
+  # on the runners) resolves some optional peer deps (chokidar/readdirp/yaml,
+  # pulled in transitively by sass and @angular-devkit/core) differently and
+  # rejects the lock file with "Missing: ... from lock file" even though it
+  # is up to date. Force the same major version used to generate the lock
+  # file before running npm ci.
+  NPM_VERSION: '11.9.0'
 
 jobs:
   lint:
@@ -26,6 +33,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npx nx run-many -t lint
 
@@ -37,6 +45,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npx nx run-many -t test
 
@@ -49,6 +58,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npx nx run-many -t build
 
@@ -77,6 +87,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npx prisma db push --schema prisma/schema.prisma --accept-data-loss
       - run: SEED_COUNTRY=BR npx prisma db seed

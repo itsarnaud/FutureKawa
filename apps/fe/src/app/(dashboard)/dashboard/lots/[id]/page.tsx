@@ -20,9 +20,9 @@ function isCountryCode(value: string | null): value is CountryCode {
 }
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
-  conforme: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50",
-  alerte: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50",
-  perime: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50",
+  conforme: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  alerte: "bg-amber-50 text-amber-700 border-amber-200",
+  perime: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 export default function LotDetailPage() {
@@ -72,7 +72,7 @@ export default function LotDetailPage() {
         ) : lot ? (
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-lg">{COUNTRY_META[country]?.flag}</span>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-mono">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 font-mono">
               Lot {lot.id.slice(0, 8)}
             </h1>
             <Badge variant="outline" className={`font-medium ${STATUS_BADGE_CLASS[lot.status] ?? ""}`}>

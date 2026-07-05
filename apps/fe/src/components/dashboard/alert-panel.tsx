@@ -91,14 +91,14 @@ export function AlertPanel({
       </CardHeader>
       <CardContent className={`${listHeightClassName} overflow-y-auto space-y-4 pr-1`}>
         {alerts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-emerald-50/20 border border-dashed border-emerald-100 rounded-lg dark:bg-emerald-950/5 dark:border-emerald-900/20">
-            <div className="p-3 rounded-full bg-emerald-100/50 text-emerald-600 dark:bg-emerald-950/40 mb-3">
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-emerald-50/20 border border-dashed border-emerald-100 rounded-lg">
+            <div className="p-3 rounded-full bg-emerald-100/50 text-emerald-600 mb-3">
               <CheckCircle2 className="size-6" />
             </div>
-            <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-400">
+            <h3 className="text-sm font-semibold text-emerald-800">
               Tout est conforme
             </h3>
-            <p className="text-xs text-emerald-600/80 dark:text-emerald-500/80 max-w-[240px] mt-1">
+            <p className="text-xs text-emerald-800 max-w-[240px] mt-1">
               {contextLabel
                 ? `Les stocks et les valeurs IoT de ${contextLabel} respectent tous les seuils de qualité.`
                 : "Aucune anomalie de stockage ou de conditions environnementales."}
@@ -115,8 +115,8 @@ export function AlertPanel({
                     alert.resolved
                       ? "bg-muted/20 border-border/60 opacity-70"
                       : severity === "high"
-                      ? "bg-rose-50/50 border-rose-200/60 dark:bg-rose-950/10 dark:border-rose-900/30"
-                      : "bg-amber-50/50 border-amber-200/60 dark:bg-amber-950/10 dark:border-amber-900/30"
+                      ? "bg-rose-50/50 border-rose-200/60"
+                      : "bg-amber-50/50 border-amber-200/60"
                   }`}
                 >
                   <div className="mt-0.5 flex-shrink-0">
@@ -128,7 +128,7 @@ export function AlertPanel({
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      <span className="font-semibold text-zinc-900">
                         {ALERT_TYPE_LABELS[alert.type] ?? alert.type}
                       </span>
                       <span className="text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border/40 font-mono">
@@ -144,13 +144,13 @@ export function AlertPanel({
                     <div className="pt-1 flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         {iconOf(alert.type)}
-                        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                        <span className="font-medium text-zinc-700">
                           {alert.warehouse.name}
                         </span>
                       </div>
                       <span
                         className={`text-[10px] flex items-center gap-1 ${
-                          alert.sent ? "text-emerald-600" : "text-muted-foreground"
+                          alert.sent ? "text-emerald-700" : "text-muted-foreground"
                         }`}
                       >
                         {alert.sent ? (
@@ -166,7 +166,7 @@ export function AlertPanel({
                     </div>
                     <div className="pt-1.5 flex items-center justify-between border-t border-border/40 mt-1.5 pt-1.5">
                       {alert.resolved ? (
-                        <span className="text-[10px] flex items-center gap-1 text-emerald-600 font-medium">
+                        <span className="text-[10px] flex items-center gap-1 text-emerald-700 font-medium">
                           <BadgeCheck className="size-3" />
                           Traitée
                           {alert.resolvedAt &&

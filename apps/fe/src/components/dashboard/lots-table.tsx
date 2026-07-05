@@ -83,7 +83,7 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50 flex items-center gap-1 w-fit font-medium py-0.5 px-2.5"
+            className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1 w-fit font-medium py-0.5 px-2.5"
           >
             <CheckCircle className="size-3.5 fill-emerald-500/10" />
             {LOT_STATUS_LABELS.conforme}
@@ -93,7 +93,7 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
         return (
           <Badge
             variant="outline"
-            className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50 flex items-center gap-1 w-fit font-medium py-0.5 px-2.5"
+            className="bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1 w-fit font-medium py-0.5 px-2.5"
           >
             <AlertTriangle className="size-3.5 fill-amber-500/10" />
             {LOT_STATUS_LABELS.alerte}
@@ -103,7 +103,7 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
         return (
           <Badge
             variant="outline"
-            className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50 flex items-center gap-1 w-fit font-medium py-0.5 px-2.5"
+            className="bg-rose-50 text-rose-700 border-rose-200 flex items-center gap-1 w-fit font-medium py-0.5 px-2.5"
           >
             <Clock className="size-3.5 fill-rose-500/10" />
             {LOT_STATUS_LABELS.perime}
@@ -144,7 +144,7 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
             onClick={() => setStatusFilter("all")}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
               statusFilter === "all"
-                ? "bg-white text-[#532a0e] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                ? "bg-white text-[#532a0e] dark:text-[#fdfaf7] shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -154,8 +154,8 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
             onClick={() => setStatusFilter("conforme")}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1 ${
               statusFilter === "conforme"
-                ? "bg-white text-emerald-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-                : "text-muted-foreground hover:text-emerald-600"
+                ? "bg-white text-emerald-700 dark:text-emerald-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-emerald-700"
             }`}
           >
             <span className="size-1.5 rounded-full bg-emerald-500" />
@@ -165,8 +165,8 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
             onClick={() => setStatusFilter("alerte")}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1 ${
               statusFilter === "alerte"
-                ? "bg-white text-amber-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-                : "text-muted-foreground hover:text-amber-600"
+                ? "bg-white text-amber-700 dark:text-amber-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-amber-700"
             }`}
           >
             <span className="size-1.5 rounded-full bg-amber-500" />
@@ -176,8 +176,8 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
             onClick={() => setStatusFilter("perime")}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1 ${
               statusFilter === "perime"
-                ? "bg-white text-rose-700 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
-                : "text-muted-foreground hover:text-rose-600"
+                ? "bg-white text-rose-700 dark:text-rose-400 shadow-sm font-semibold border border-border/30 dark:bg-zinc-800"
+                : "text-muted-foreground hover:text-rose-700"
             }`}
           >
             <span className="size-1.5 rounded-full bg-rose-500" />
@@ -188,7 +188,7 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
 
       {/* FIFO Indicator */}
       {sortField === "storedAt" && sortOrder === "asc" && (
-        <div className="bg-amber-50/50 border border-amber-200/60 rounded-lg p-3 text-xs text-amber-800 dark:bg-amber-950/10 dark:border-amber-900/30 flex items-center gap-2">
+        <div className="bg-amber-50/50 border border-amber-200/60 rounded-lg p-3 text-xs text-amber-800 flex items-center gap-2">
           <Clock className="size-4 text-amber-600 flex-shrink-0" />
           <span>
             <strong>Règle FIFO active</strong> : les lots les plus anciens (date de stockage minimale) sont affichés en premier pour prioriser leur expédition.
@@ -280,7 +280,11 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
                         </span>
                         <span
                           className={`text-[10px] ${
-                            age > 365 ? "text-rose-600 font-semibold" : age > 300 ? "text-amber-600" : "text-muted-foreground"
+                            age > 365
+                              ? "text-rose-700 font-semibold"
+                              : age > 300
+                              ? "text-amber-700"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {age} jour{age > 1 ? "s" : ""}
@@ -288,7 +292,7 @@ export function LotsTable({ lots, showExploitation = true }: LotsTableProps) {
                       </div>
                     </td>
                     <td className="p-3.5">
-                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                      <span className="font-semibold text-zinc-700">
                         {lot.weightKg.toFixed(0)} kg
                       </span>
                     </td>
