@@ -81,7 +81,7 @@ Le frontend (`apps/fe`, Next.js App Router) ne parle qu'au `gateway` — jamais 
 NEXT_PUBLIC_API_URL=http://localhost:3010/api npx nx run fe:dev --port 4200
 ```
 
-**Variable d'environnement :** `NEXT_PUBLIC_API_URL` — l'URL du `gateway`, telle que le *navigateur* doit pouvoir la joindre. C'est une variable `NEXT_PUBLIC_*` : elle est injectée dans le bundle client au moment du **build**, pas au démarrage du conteneur. Sur une installation Docker classique en local, la valeur par défaut de `.env.exemple` (`http://localhost:3010/api`, le port du gateway mappé sur l'hôte) convient. Si le navigateur ne tourne pas sur la même machine que Docker (Codespaces, serveur distant), il faut la remplacer par l'URL publique/forwardée du port du gateway avant de builder — ne jamais commiter une valeur spécifique à un environnement.
+**Variable d'environnement :** `NEXT_PUBLIC_API_URL` — l'URL du `gateway`, telle que le *navigateur* doit pouvoir la joindre. C'est une variable `NEXT_PUBLIC_*` : elle est injectée dans le bundle client au moment du **build**, pas au démarrage du conteneur. Sur une installation Docker classique en local, la valeur par défaut de `.env.exemple` (`http://localhost:3010/api`, le port du gateway mappé sur l'hôte) convient.
 
 **Build Docker :** `apps/fe/Dockerfile` (multi-stage, `next.config.js` en `output: "standalone"` pour une image minimale) prend `NEXT_PUBLIC_API_URL` en `build arg`, lu depuis `.env` par `docker-compose.yml`. Rebuild nécessaire si cette valeur change (`docker compose build fe`).
 
