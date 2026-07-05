@@ -29,6 +29,10 @@ pipeline {
     stage('Install dependencies') {
       steps {
         sh 'npm ci'
+        // Country-api and alerting-service import the generated @prisma/client
+        // (types, enums) even in unit tests — without this, lint/test/build
+        // fail with "Cannot find module '.prisma/client/default'".
+        sh 'npx prisma generate --schema=prisma/schema.prisma'
       }
     }
 

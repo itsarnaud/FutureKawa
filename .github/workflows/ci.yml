@@ -35,6 +35,7 @@ jobs:
           cache: npm
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
+      - run: npx prisma generate --schema=prisma/schema.prisma
       - run: npx nx run-many -t lint
 
   test:
@@ -47,6 +48,10 @@ jobs:
           cache: npm
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
+      # Country-api and alerting-service import the generated @prisma/client
+      # (types, enums) even in unit tests with mocked Prisma — without this
+      # step both suites fail with "Cannot find module '.prisma/client/default'".
+      - run: npx prisma generate --schema=prisma/schema.prisma
       - run: npx nx run-many -t test
 
   build:
@@ -60,6 +65,7 @@ jobs:
           cache: npm
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
+      - run: npx prisma generate --schema=prisma/schema.prisma
       - run: npx nx run-many -t build
 
   integration:

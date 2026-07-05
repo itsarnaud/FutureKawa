@@ -3,7 +3,7 @@
 import { Suspense, useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,6 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const setUser = useAuthStore((s) => s.setUser);
 
@@ -39,7 +38,12 @@ function LoginForm() {
     try {
       const user = await auth.login(email, password);
       setUser(user);
-      router.push(searchParams.get("callbackUrl") ?? "/dashboard");
+      // Full navigation (not router.push): the target route may have been
+      // prefetched by Next's client router cache while logged out (e.g. the
+      // marketing navbar's "Dashboard" link), which would cache the
+      // middleware's redirect-to-login response. router.push can silently
+      // reuse that stale cache entry instead of re-checking the fresh cookie.
+      window.location.href = searchParams.get("callbackUrl") ?? "/dashboard";
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
