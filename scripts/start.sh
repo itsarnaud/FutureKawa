@@ -37,10 +37,16 @@ seed_country() {
 wait_for_postgres postgres-bresil "Brésil"
 wait_for_postgres postgres-equateur "Équateur"
 wait_for_postgres postgres-colombie "Colombie"
+wait_for_postgres postgres-siege "Siège"
 
 seed_country "$POSTGRES_PORT_BR" BR
 seed_country "$POSTGRES_PORT_EC" EC
 seed_country "$POSTGRES_PORT_CO" CO
+
+# Siège database only stores users (auth) — no domain data to seed.
+echo "==> Migrating siège (auth) database..."
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT_SIEGE}/${POSTGRES_DB}?schema=public" \
+  npx prisma db push --accept-data-loss >/dev/null
 
 cat <<EOF
 

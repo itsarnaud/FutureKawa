@@ -1,6 +1,8 @@
-import { Controller, Get, Param, Query, ParseIntPipe, DefaultValuePipe, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, DefaultValuePipe, UseGuards, BadRequestException } from '@nestjs/common';
 import { CountryApiService } from '../country-api/country-api.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('warehouses')
 export class WarehousesController {
   constructor(private readonly countryApi: CountryApiService) {}

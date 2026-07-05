@@ -40,9 +40,31 @@ enum DeviceStatus {
   maintenance
 }
 
+enum UserRole {
+  admin
+  manager
+  viewer
+}
+
 // ─────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────
+
+// Lives in the gateway's own database (siège), not the per-country ones below —
+// authentication is a head-office concern, not something each country backend
+// needs to know about.
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(viewer)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
 
 model Country {
   id   String @id @default(uuid())
@@ -158,6 +180,8 @@ model Alert {
   type        AlertType
   message     String
   sent        Boolean   @default(false)
+  resolved    Boolean   @default(false)
+  resolvedAt  DateTime?
   triggeredAt DateTime  @default(now())
 
   // Relations
@@ -165,5 +189,6 @@ model Alert {
   lot       Lot?      @relation(fields: [lotId], references: [id])
 
   @@index([warehouseId, sent])
+  @@index([warehouseId, resolved])
   @@map("alerts")
 }
