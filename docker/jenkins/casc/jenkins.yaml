@@ -1,0 +1,99 @@
+# Configuration-as-Code for the local FutureKawa Jenkins controller.
+#
+# This seeds the futurekawa-pipeline job at startup (via the jobs: block
+# below), so no job needs to be created by hand and no scripted REST call is
+# ever made to the Jenkins API. The default crumb-issuer CSRF protection is
+# left enabled (crumbIssuer below) — nothing here requires disabling it.
+jenkins:
+  numExecutors: 2
+  systemMessage: "FutureKawa — local Jenkins (JCasC-managed, CSRF protection enabled)."
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_USER}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy: loggedInUsersCanDoAnything
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "github-token"
+              username: "${GITHUB_USER:-x-access-token}"
+              password: "${GITHUB_TOKEN:-}"
+              description: >-
+                Optional GitHub PAT (set GITHUB_USER/GITHUB_TOKEN in .env.jenkins).
+                Only attached to the GitHub branch source if GITHUB_TOKEN is non-empty;
+                otherwise futurekawa-github polls anonymously (fine for a public repo
+                at a low scan frequency).
+
+jobs:
+  - script: >
+      pipelineJob('futurekawa-pipeline') {
+        description('Runs the repo Jenkinsfile against whatever is currently checked out in the repo bind-mounted read-only at /repo-checkout-source — no push, no local "main" branch required.')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('file:///repo-checkout-source')
+                  refspec('+HEAD:refs/remotes/origin/HEAD')
+                }
+                branches('origin/HEAD')
+              }
+            }
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }
+
+      def githubToken = System.getenv('GITHUB_TOKEN')
+
+      multibranchPipelineJob('futurekawa-github') {
+        description('Auto-discovers branches and pull requests on https://github.com/itsarnaud/FutureKawa and builds the Jenkinsfile for each — no webhook needed, polls on the periodicFolderTrigger interval below (this Jenkins is not publicly reachable).')
+        branchSources {
+          branchSource {
+            source {
+              github {
+                id('futurekawa-github-source')
+                configuredByUrl(true)
+                repoOwner('itsarnaud')
+                repository('FutureKawa')
+                repositoryUrl('https://github.com/itsarnaud/FutureKawa')
+                if (githubToken) {
+                  credentialsId('github-token')
+                }
+                traits {
+                  gitHubBranchDiscovery {
+                    strategyId(1)
+                  }
+                  gitHubPullRequestDiscovery {
+                    strategyId(2)
+                  }
+                }
+              }
+            }
+          }
+        }
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+        orphanedItemStrategy {
+          discardOldItems {
+            numToKeep(20)
+          }
+        }
+        triggers {
+          periodicFolderTrigger {
+            interval('5m')
+          }
+        }
+      }

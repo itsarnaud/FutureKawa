@@ -2,6 +2,7 @@
 
 #
 .env
+.env.jenkins
 # Keep GitHub Actions workflows tracked; everything else under .github/
 # (agent/tooling config) stays local-only.
 .github/*

@@ -70,8 +70,13 @@ IOT/
   futurekawa-iot-esp32/  # Firmware capteur (PlatformIO)
   broker/          # Config Mosquitto
 docker-compose.yml # Orchestration complète (BDD, brokers, APIs, gateway, frontend, mailpit)
+docker-compose.jenkins.yml # Jenkins local (opt-in) pour tester le Jenkinsfile de bout en bout
+docker/
+  jenkins/         # Image Jenkins (Node, npm, Docker CLI), plugins.txt, config JCasC
+.env.jenkins.example # Identifiants admin pour le Jenkins local (voir docker-compose.jenkins.yml)
 scripts/
   start.sh         # Démarrage one-command (build, migrations, seed, récap des URLs)
+  start-jenkins.sh # Démarre le Jenkins local et affiche l'URL/les identifiants
 docs/
   technique.md                       # Dossier technique (architecture, IoT, tests, CI/CD)
   phase2-automatisation.md           # Schéma de principe : pilotage d'actionneurs (phase 2)
@@ -123,6 +128,29 @@ node IOT/simulate-sensors.js       # simule des capteurs IoT sans matériel (voi
 
 Un [`Jenkinsfile`](Jenkinsfile) définit le pipeline (install → lint → tests unitaires → build → tests
 d'intégration → packaging Docker). Voir [docs/technique.md](docs/technique.md) pour l'état de validation.
+
+**Tester le pipeline Jenkins en local :**
+
+```sh
+./scripts/start-jenkins.sh
+```
+
+Démarre un Jenkins (Node, npm, Docker CLI préinstallés) sur http://localhost:8080, avec deux jobs déjà
+configurés via Configuration-as-Code (aucun clic manuel requis) :
+
+- **`futurekawa-pipeline`** : construit le `Jenkinsfile` du dépôt local monté en lecture seule — un
+  commit local suffit, pas besoin de push. Pratique pour itérer vite sur le `Jenkinsfile` lui-même.
+- **`futurekawa-github`** : job multibranch qui découvre automatiquement les branches et les *pull
+  requests* de https://github.com/itsarnaud/FutureKawa (plugin GitHub Branch Source) et construit le
+  `Jenkinsfile` de chacune. Sans exposer ce Jenkins sur Internet, un webhook GitHub n'est pas possible :
+  la découverte se fait donc par sondage (`periodicFolderTrigger`, toutes les 5 min), suffisant pour
+  déclencher un build automatiquement après un `git push` ou l'ouverture d'une PR. Fonctionne en
+  anonyme sur ce dépôt public ; renseigner `GITHUB_USER`/`GITHUB_TOKEN` dans `.env.jenkins` pour sonder
+  avec un jeton (limite de débit API plus haute).
+
+L'accès Docker passe par un `docker-socket-proxy` scopé (pas de socket hôte monté brut dans le
+conteneur) et la protection CSRF par défaut de Jenkins reste activée (les jobs sont créés au démarrage
+via JCasC, jamais via un appel REST scripté).
 
 ## Convention MQTT
 

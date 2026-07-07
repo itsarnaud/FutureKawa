@@ -95,6 +95,7 @@ jobs:
           cache: npm
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
+      - run: npx prisma generate --schema=prisma/schema.prisma
       - run: npx prisma db push --schema prisma/schema.prisma --accept-data-loss
       - run: SEED_COUNTRY=BR npx prisma db seed
       - run: npx nx test-e2e country-api
@@ -104,4 +105,8 @@ jobs:
     needs: [build]
     steps:
       - uses: actions/checkout@v4
+      # docker-compose.yml services reference `env_file: - .env`; Compose
+      # validates that file exists even for `build` (not just `up`), and it's
+      # gitignored so a fresh checkout never has one.
+      - run: cp .env.exemple .env
       - run: docker compose build country-api-bresil gateway alerting-bresil fe
