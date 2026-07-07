@@ -87,6 +87,15 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:password@localhost:5432/mydb?schema=public
+      # Recent Node 20.x patches default "detect ESM syntax in ambiguous
+      # files" (--experimental-detect-module) to on. That heuristic
+      # intercepts require() of unrecognized extensions (like .ts) via
+      # Node's own ESM loader before ts-node's classic require.extensions
+      # hook ever runs, so `prisma db seed` (which shells out to
+      # `ts-node prisma/seed.ts`) fails with "Unknown file extension '.ts'".
+      # ts-node 10.9.2 (pinned in package.json) predates this Node feature.
+      NODE_OPTIONS: --no-experimental-detect-module
+      TS_NODE_COMPILER_OPTIONS: '{"module":"CommonJS"}'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
