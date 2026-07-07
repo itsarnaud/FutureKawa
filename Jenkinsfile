@@ -85,6 +85,10 @@ pipeline {
 
     stage('Docker image packaging') {
       steps {
+        // docker-compose.yml services reference `env_file: - .env`; Compose
+        // validates that file exists even for `build` (not just `up`), and
+        // it's gitignored so a fresh checkout never has one.
+        sh 'test -f .env || cp .env.exemple .env'
         sh 'docker compose build country-api-bresil gateway alerting-bresil fe'
       }
     }

@@ -65,7 +65,8 @@
         "runTarget": {
           "name": "docker:run"
         }
-      }
+      },
+      "exclude": ["docker/**/*"]
     }
   ],
   "generators": {

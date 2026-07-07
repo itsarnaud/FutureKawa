@@ -289,11 +289,20 @@ build → tests d'intégration → packaging Docker) :
 **État de validation.** Chaque commande des deux pipelines a été exécutée et validée manuellement dans
 l'environnement de développement (lint sans erreur, 23 tests unitaires country-api + 9 alerting-service
 + 8 gateway + 5 fe, 7 tests d'intégration passants, build des 4 apps réussi, images Docker construites
-avec succès). Le `Jenkinsfile` n'a en revanche pas été exécuté de bout en bout sur un serveur Jenkins réel :
-le monter aurait nécessité de désactiver des protections de sécurité (CSRF) et de monter le socket Docker
-de l'hôte dans un conteneur jetable — une décision explicitement écartée pour ce projet plutôt que prise
-silencieusement. Pour obtenir une preuve d'exécution complète, pointer une instance Jenkins existante sur
-ce dépôt et créer un job Pipeline utilisant ce `Jenkinsfile`.
+avec succès). Le `Jenkinsfile` s'exécute désormais aussi de bout en bout sur un Jenkins local
+(`docker-compose.jenkins.yml`, démarré via `./scripts/start-jenkins.sh` — voir le
+[README](../README.md#cicd)) : le job `futurekawa-pipeline` y est créé au démarrage par
+Configuration-as-Code, sans jamais passer par l'API REST authentifiée, donc la protection CSRF par
+défaut de Jenkins reste activée. L'accès Docker ne passe pas non plus par un montage brut du socket de
+l'hôte dans le conteneur Jenkins : un `docker-socket-proxy` scopé (containers/exec/images/build
+uniquement) s'intercale entre les deux. Les deux réserves de sécurité initialement soulevées pour ce
+projet (CSRF, socket Docker) ont donc été traitées plutôt que contournées.
+
+Ce Jenkins local expose aussi un second job, `futurekawa-github` (plugin GitHub Branch Source), qui
+découvre automatiquement les branches et les *pull requests* du dépôt GitHub et construit le
+`Jenkinsfile` de chacune — sans webhook (impossible ici puisque ce Jenkins n'est pas exposé sur
+Internet), via un sondage périodique (`periodicFolderTrigger`, 5 min) de l'API GitHub, en anonyme par
+défaut.
 
 **Deux anomalies de pipeline détectées et corrigées :**
 
@@ -304,7 +313,10 @@ ce dépôt et créer un job Pipeline utilisant ce `Jenkinsfile`.
   deux suites (`Cannot find module '.prisma/client/default'`, puis `has no exported member 'AlertType'`).
   Corrigé en ajoutant `npx prisma generate --schema=prisma/schema.prisma` juste après `npm ci` dans les
   trois jobs concernés de `ci.yml` et dans le stage `Install dependencies` du `Jenkinsfile` — à l'image de
-  ce que font déjà les `Dockerfile` de `country-api`, `alerting-service` et `gateway`.
+  ce que font déjà les `Dockerfile` de `country-api`, `alerting-service` et `gateway`. Le job `integration`
+  avait été oublié lors de cette correction : `prisma db seed` type-vérifie `prisma/seed.ts` via `ts-node`
+  avant de l'exécuter, donc son `import { PrismaClient } from '@prisma/client'` échouait dès la compilation
+  (`TS2305: has no exported member 'PrismaClient'`) faute de client généré. Corrigé de la même façon.
 - *Récursion infinie sur `nx run-many -t test`.* Le `package.json` racine du monorepo est nommé
   `@fe/source` et expose un script `test` valant `nx run-many -t test`. Nx transforme automatiquement les
   scripts npm de la racine en cible d'un projet inféré du même nom : `nx run-many -t test` déclenchait donc
