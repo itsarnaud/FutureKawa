@@ -33,6 +33,16 @@ credentials:
                 otherwise futurekawa-github polls anonymously (fine for a public repo
                 at a low scan frequency).
 
+unclassified:
+  gitHubConfiguration:
+    # Default strategy (ThrottleForNormalize) preemptively spreads anonymous
+    # API calls across the full hourly quota, sleeping several minutes
+    # between each request — branch/PR indexing can then take the better
+    # part of an hour to even start a build. ThrottleOnOver only slows down
+    # once actually close to the limit, which is what an anonymous scan of
+    # a single small public repo every 5 minutes needs.
+    apiRateLimitChecker: ThrottleOnOver
+
 jobs:
   - script: >
       pipelineJob('futurekawa-pipeline') {
